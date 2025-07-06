@@ -233,11 +233,19 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    console.log('Vista cargada. Película:', {
+    console.log('🎬 Inicializando vista de película:', {
         id: {{ $pelicula->id }},
         titulo: "{{ $pelicula->titulo }}",
         fecha_estreno: "{{ $pelicula->fecha_estreno->format('Y-m-d') }}",
         ya_se_estreno: {{ $pelicula->fecha_estreno->lte(now()) ? 'true' : 'false' }}
+    });
+
+    // 🔍 DEBUG: Ver qué ciudades están disponibles en el selector
+    console.log('🏙️ Ciudades disponibles en el selector:', {
+        total: $('#select-ciudad option').length,
+        opciones: $('#select-ciudad option').map(function() {
+            return { value: $(this).val(), text: $(this).text() };
+        }).get()
     });
 
     @if($pelicula->fecha_estreno->lte(now()))
@@ -246,215 +254,71 @@ $(document).ready(function() {
         cargarHorarios();
     });
 
-    function cargarHorarios() {
-        const ciudadId = $('#select-ciudad').val();
-        const fecha = $('#select-fecha').val();
-
-        console.log('Cargando horarios:', { 
-            ciudadId, 
-            fecha, 
-            peliculaId: {{ $pelicula->id }},
-            url: `/api/peliculas/{{ $pelicula->id }}/funciones`
-        });
-
-        if (!ciudadId || !fecha) {
-            $('#cines-horarios').addClass('d-none');
-            $('#no-horarios').removeClass('d-none');
-            return;
-        }
-
-        // Mostrar loading
-        $('#horarios-container').html(`
-            <div class="text-center py-4">
-                <div class="spinner-border text-warning" role="status">
-                    <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="mt-2">Cargando horarios disponibles...</p>
-            </div>
-        `);
-        $('#cines-horarios').removeClass('d-none');
-        $('#no-horarios').addClass('d-none');
-
-        // Llamada AJAX
-        $.ajax({
-            url: `/api/peliculas/{{ $pelicula->id }}/funciones`,
-            method: 'GET',
-            data: {
-                ciudad_id: ciudadId,
-                fecha: fecha
-            },
-            success: function(funciones) {
-                console.log('Funciones recibidas:', funciones);
-                
-                if (funciones.length === 0) {
-                    $('#horarios-container').html(`
-                        <div class="text-center py-5">
-                            <i class="fas fa-calendar-times display-3 text-muted mb-3"></i>
-                            <h5 class="text-muted">No hay funciones disponibles</h5>
-                            <p class="text-muted">para la fecha y ciudad seleccionadas</p>
-                            <small class="text-muted">Prueba con otra fecha o ciudad</small>
-                        </div>
-                    `);
-                } else {
-                    mostrarHorarios(funciones);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error AJAX:', {xhr, status, error, responseText: xhr.responseText});
-                $('#horarios-container').html(`
-                    <div class="alert alert-danger text-center">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Error al cargar los horarios</strong><br>
-                        <small>Por favor, intenta nuevamente. Código: ${xhr.status}</small><br>
-                        <small class="text-muted">Fecha: ${fecha}, Ciudad: ${ciudadId}</small>
-                    </div>
-                `);
-            }
-        });
+    // Auto-seleccionar primera ciudad si hay solo una
+    const ciudadesDisponibles = $('#select-ciudad option').length;
+    if (ciudadesDisponibles === 2) { // 1 opción vacía + 1 ciudad
+        $('#select-ciudad').val($('#select-ciudad option:eq(1)').val());
     }
 
-    function mostrarHorarios(funciones) {
-        const cinesGrouped = {};
-        
-        // Agrupar funciones por cine
-        funciones.forEach(function(funcion) {
-            const cineId = funcion.sala.cine.id;
-            if (!cinesGrouped[cineId]) {
-                cinesGrouped[cineId] = {
-                    cine: funcion.sala.cine,
-                    funciones: []
-                };
-            }
-            cinesGrouped[cineId].funciones.push(funcion);
-        });
-
-        let html = '';
-        
-        Object.values(cinesGrouped).forEach(function(grupo) {
-            html += `
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header cinema-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h5 class="mb-1 fw-bold">
-                                    <i class="fas fa-building me-2 text-warning"></i>${grupo.cine.nombre}
-                                </h5>
-                                <small class="text-muted">
-                                    <i class="fas fa-map-marker-alt me-1"></i>${grupo.cine.direccion || 'Dirección no disponible'}
-                                </small>
-                            </div>
-                            <span class="badge bg-warning text-dark">${grupo.funciones.length} funciones</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-            `;
-            
-            grupo.funciones.forEach(function(funcion) {
-                const hora = formatTime(funcion.hora_funcion);
-                const precio = formatPrice(funcion.precio);
-                
-                html += `
-                    <div class="col-lg-3 col-md-4 col-sm-6">
-                        <div class="card horario-item h-100">
-                            <div class="card-body text-center p-3">
-                                <h5 class="fw-bold text-primary mb-2">${hora}</h5>
-                                <div class="mb-2">
-                                    <span class="badge bg-secondary me-1">${funcion.tipo}</span>
-                                    <span class="badge bg-info">${funcion.formato}</span>
-                                </div>
-                                <small class="text-muted d-block mb-2">Sala ${funcion.sala.nombre}</small>
-                                <div class="price-section mb-3">
-                                    <strong class="text-success fs-5">${precio}</strong>
-                                    <small class="text-muted d-block">+ tarifa servicio</small>
-                                </div>
-                                <a href="/reserva/${funcion.id}/asientos" class="btn btn-warning w-100 fw-bold">
-                                    <i class="fas fa-shopping-cart me-1"></i>Comprar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        $('#horarios-container').html(html);
-    }
-
-    // Funciones auxiliares para formato
-    function formatTime(timeString) {
-        try {
-            const time = new Date('2000-01-01 ' + timeString);
-            return time.toLocaleTimeString('es-PE', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-        } catch(e) {
-            return timeString;
-        }
-    }
-
-    // Auto-seleccionar la primera fecha disponible
-    if ($('#select-fecha option').length > 1) {
+    // Auto-seleccionar primera fecha si hay solo una
+    const fechasDisponibles = $('#select-fecha option').length;
+    if (fechasDisponibles === 2) { // 1 opción vacía + 1 fecha
         $('#select-fecha').val($('#select-fecha option:eq(1)').val());
+    }
+
+    // Si hay auto-selecciones, cargar horarios automáticamente
+    if (ciudadesDisponibles === 2 && fechasDisponibles === 2) {
+        setTimeout(cargarHorarios, 500);
     }
     @endif
 });
-// JavaScript mejorado para la vista de película - Agregar al final del script en peliculas/show.blade.php
 
 function cargarHorarios() {
     const ciudadId = $('#select-ciudad').val();
     const fecha = $('#select-fecha').val();
     const peliculaId = {{ $pelicula->id }};
 
+    // 🔍 DEBUG: Ver exactamente qué se está enviando
     console.log('🎬 INICIANDO CARGA DE HORARIOS', { 
-        ciudadId, 
-        fecha, 
-        peliculaId,
+        ciudadId: ciudadId,
+        ciudadIdType: typeof ciudadId,
+        fecha: fecha,
+        peliculaId: peliculaId,
         url: `/api/peliculas/${peliculaId}/funciones`
     });
 
     // Validaciones básicas
     if (!ciudadId || !fecha) {
-        $('#cines-horarios').addClass('d-none');
-        $('#no-horarios').removeClass('d-none');
         console.log('❌ Faltan parámetros básicos');
+        mostrarSinSeleccion();
         return;
     }
 
-    // Mostrar loading con más información
-    $('#horarios-container').html(`
-        <div class="text-center py-4">
-            <div class="spinner-border text-warning" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando horarios disponibles...</p>
-            <small class="text-muted">
-                Película: ${peliculaId} | Fecha: ${fecha} | Ciudad: ${ciudadId}
-            </small>
-        </div>
-    `);
-    $('#cines-horarios').removeClass('d-none');
-    $('#no-horarios').addClass('d-none');
+    // Validar que ciudadId sea un número válido
+    const ciudadIdNum = parseInt(ciudadId);
+    if (isNaN(ciudadIdNum) || ciudadIdNum <= 0) {
+        console.error('❌ ID de ciudad inválido:', ciudadId);
+        mostrarError('ID de ciudad inválido');
+        return;
+    }
 
-    // Configuración AJAX con debug
-    const ajaxConfig = {
+    // Mostrar loading
+    mostrarLoading(peliculaId, fecha, ciudadId);
+
+    // Llamada AJAX con parámetros validados
+    $.ajax({
         url: `/api/peliculas/${peliculaId}/funciones`,
         method: 'GET',
         data: {
-            ciudad_id: ciudadId,
+            ciudad_id: ciudadIdNum, // Asegurar que sea número
             fecha: fecha
         },
-        timeout: 10000, // 10 segundos
+        timeout: 15000,
         beforeSend: function(xhr) {
-            console.log('📡 Enviando petición AJAX...');
+            console.log('📡 Enviando petición AJAX con parámetros:', {
+                ciudad_id: ciudadIdNum,
+                fecha: fecha
+            });
         },
         success: function(funciones, textStatus, xhr) {
             console.log('✅ RESPUESTA EXITOSA', {
@@ -473,20 +337,7 @@ function cargarHorarios() {
             if (funciones.length === 0) {
                 mostrarSinFunciones();
             } else {
-                // Verificar estructura de cada función
-                let estructuraValida = true;
-                funciones.forEach((funcion, index) => {
-                    if (!funcion.sala || !funcion.sala.cine) {
-                        console.error(`❌ Función ${index} tiene estructura inválida:`, funcion);
-                        estructuraValida = false;
-                    }
-                });
-                
-                if (estructuraValida) {
-                    mostrarHorarios(funciones);
-                } else {
-                    mostrarError('Datos de funciones incompletos');
-                }
+                mostrarHorarios(funciones);
             }
         },
         error: function(xhr, status, error) {
@@ -499,29 +350,40 @@ function cargarHorarios() {
             });
 
             let errorMessage = 'Error desconocido';
-            let debugInfo = '';
-
             try {
                 if (xhr.responseJSON) {
                     errorMessage = xhr.responseJSON.message || xhr.responseJSON.error || 'Error del servidor';
-                    debugInfo = xhr.responseJSON.debug_info ? JSON.stringify(xhr.responseJSON.debug_info) : '';
                 } else if (xhr.responseText) {
-                    errorMessage = `Error ${xhr.status}: ${xhr.statusText}`;
-                    debugInfo = xhr.responseText.substring(0, 200);
+                    errorMessage = 'Error de servidor (ver consola para detalles)';
                 }
-            } catch (e) {
-                console.error('Error parseando respuesta de error:', e);
+            } catch(e) {
+                errorMessage = `Error ${xhr.status}: ${xhr.statusText}`;
             }
 
-            mostrarError(errorMessage, debugInfo, xhr.status);
-        },
-        complete: function(xhr, status) {
-            console.log('🏁 Petición completada', { status: status, responseStatus: xhr.status });
+            mostrarError(errorMessage, xhr.status);
         }
-    };
+    });
+}
 
-    // Ejecutar AJAX
-    $.ajax(ajaxConfig);
+function mostrarLoading(peliculaId, fecha, ciudadId) {
+    $('#horarios-container').html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando horarios disponibles...</p>
+            <small class="text-muted">
+                Película: ${peliculaId} | Fecha: ${fecha} | Ciudad: ${ciudadId}
+            </small>
+        </div>
+    `);
+    $('#cines-horarios').removeClass('d-none');
+    $('#no-horarios').addClass('d-none');
+}
+
+function mostrarSinSeleccion() {
+    $('#cines-horarios').addClass('d-none');
+    $('#no-horarios').removeClass('d-none');
 }
 
 function mostrarSinFunciones() {
@@ -530,21 +392,13 @@ function mostrarSinFunciones() {
             <i class="fas fa-calendar-times display-3 text-muted mb-3"></i>
             <h5 class="text-muted">No hay funciones disponibles</h5>
             <p class="text-muted">para la fecha y ciudad seleccionadas</p>
-            <div class="alert alert-info mt-3">
-                <small>
-                    <strong>Sugerencias:</strong><br>
-                    • Prueba con otra fecha<br>
-                    • Verifica si la película ya se estrenó<br>
-                    • Intenta con otra ciudad
-                </small>
-            </div>
+            <small class="text-muted">Prueba con otra fecha o ciudad</small>
         </div>
     `);
 }
 
-function mostrarError(mensaje, debugInfo = '', codigo = '') {
+function mostrarError(mensaje, codigo = null) {
     const codigoText = codigo ? `Código: ${codigo}` : '';
-    const debugText = debugInfo ? `<details class="mt-2"><summary>Información técnica</summary><pre class="small">${debugInfo}</pre></details>` : '';
     
     $('#horarios-container').html(`
         <div class="alert alert-danger text-center">
@@ -552,10 +406,9 @@ function mostrarError(mensaje, debugInfo = '', codigo = '') {
             <strong>Error al cargar los horarios</strong><br>
             <small>${mensaje}</small><br>
             ${codigoText ? `<small class="text-muted">${codigoText}</small>` : ''}
-            ${debugText}
             <div class="mt-3">
                 <button class="btn btn-outline-danger btn-sm" onclick="cargarHorarios()">
-                    <i class="fas fa-retry me-1"></i>Reintentar
+                    <i class="fas fa-redo me-1"></i>Reintentar
                 </button>
             </div>
         </div>
@@ -624,9 +477,9 @@ function mostrarHorarios(funciones) {
                                 <strong class="text-success fs-5">${precio}</strong>
                                 <small class="text-muted d-block">+ tarifa servicio</small>
                             </div>
-                            <a href="/reserva/${funcion.id}/asientos" class="btn btn-warning w-100 fw-bold">
+                            <button onclick="verificarAutenticacionYComprar(${funcion.id})" class="btn btn-warning w-100 fw-bold">
                                 <i class="fas fa-shopping-cart me-1"></i>Comprar
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -643,7 +496,7 @@ function mostrarHorarios(funciones) {
     $('#horarios-container').html(html);
 }
 
-// Funciones auxiliares mejoradas
+// Funciones auxiliares para formato
 function formatTime(timeString) {
     try {
         const time = new Date('2000-01-01 ' + timeString);
@@ -656,6 +509,77 @@ function formatTime(timeString) {
         console.warn('Error formateando hora:', timeString, e);
         return timeString;
     }
+}
+
+function formatPrice(price) {
+    try {
+        return new Intl.NumberFormat('es-PE', {
+            style: 'currency',
+            currency: 'PEN'
+        }).format(price);
+    } catch(e) {
+        return `S/ ${price}`;
+    }
+}
+
+// Función para verificar autenticación antes de comprar (implementación anterior)
+function verificarAutenticacionYComprar(funcionId) {
+    @auth
+        // Usuario autenticado, proceder con la compra
+        window.location.href = `/reserva/${funcionId}/asientos`;
+    @else
+        // Usuario no autenticado, mostrar modal de login
+        mostrarModalLogin(funcionId);
+    @endauth
+}
+
+// Función para mostrar modal de login (implementación anterior)
+function mostrarModalLogin(funcionId) {
+    const modalHtml = `
+        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loginModalLabel">
+                            <i class="fas fa-user-lock me-2"></i>Iniciar Sesión Requerido
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-ticket-alt text-warning fa-3x"></i>
+                        </div>
+                        <h6 class="mb-3">Para comprar entradas necesitas una cuenta</h6>
+                        <p class="text-muted">
+                            Inicia sesión o regístrate para continuar con tu compra. 
+                            ¡Solo te tomará unos segundos!
+                        </p>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <a href="/login?redirect=/reserva/${funcionId}/asientos" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </a>
+                        <a href="/register?redirect=/reserva/${funcionId}/asientos" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>Registrarse
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    const existingModal = document.getElementById('loginModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+    modal.show();
 }
 </script>
 @endpush

@@ -1,5 +1,4 @@
 <?php
-// routes/web.php - RUTAS COMPLETAS
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
@@ -11,10 +10,14 @@ use App\Http\Controllers\DulceriaController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\PeliculaController as AdminPeliculaController;
 use App\Http\Controllers\Admin\DulceriaController as AdminDulceriaController;
-use Carbon\Carbon;
 use App\Models\Pelicula;
+use App\Models\Funcion;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
+// ========================================
 // RUTAS PÚBLICAS
+// ========================================
 
 // Página principal
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -28,125 +31,65 @@ Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Películas 
+// Películas (público)
 Route::get('/pelicula/{pelicula}', [PeliculaController::class, 'show'])->name('pelicula.show');
 Route::get('/pelicula/{pelicula}/calendario', [PeliculaController::class, 'calendario'])->name('pelicula.calendario');
 
-// Dulcería
+// Cines (público)
+Route::get('/cines', [CineController::class, 'index'])->name('cines.index');
+Route::get('/cine/{cine}', [CineController::class, 'show'])->name('cine.show');
+Route::get('/cine/{cine}/programacion', [CineController::class, 'programacion'])->name('cine.programacion');
+
+// Dulcería (navegación pública, pero checkout requiere login)
 Route::get('/dulceria', [DulceriaController::class, 'index'])->name('dulceria.index');
 Route::post('/dulceria/agregar-carrito', [DulceriaController::class, 'agregarAlCarrito'])->name('dulceria.agregar-carrito');
 Route::get('/dulceria/carrito', [DulceriaController::class, 'verCarrito'])->name('dulceria.carrito');
 Route::post('/dulceria/actualizar-carrito', [DulceriaController::class, 'actualizarCarrito'])->name('dulceria.actualizar-carrito');
 Route::delete('/dulceria/eliminar-carrito/{productoId}', [DulceriaController::class, 'eliminarDelCarrito'])->name('dulceria.eliminar-carrito');
 
-// RUTAS PROTEGIDAS (REQUIEREN LOGIN)
+// ========================================
+// RUTAS API PÚBLICAS
+// ========================================
 
-Route::middleware(['auth'])->group(function () {
-    
-    // Reservas
-    Route::get('/reserva/{funcion}/asientos', [ReservaController::class, 'seleccionarAsientos'])->name('reserva.asientos');
-    Route::post('/reserva/{funcion}/confirmar', [ReservaController::class, 'confirmarReserva'])->name('reserva.confirmar');
-    Route::post('/reserva/{funcion}/procesar', [ReservaController::class, 'procesar'])->name('reserva.procesar');
-    Route::get('/reserva/{reserva}/boleta', [ReservaController::class, 'boleta'])->name('reservas.boleta');
-    Route::get('/mis-reservas', [ReservaController::class, 'misReservas'])->name('reservas.mis-reservas');
-
-    // Dulcería (checkout requiere login)
-    Route::get('/dulceria/checkout', [DulceriaController::class, 'checkout'])->name('dulceria.checkout');
-    Route::post('/dulceria/procesar-pedido', [DulceriaController::class, 'procesarPedido'])->name('dulceria.procesar-pedido');
-    Route::get('/dulceria/{pedido}/boleta', [DulceriaController::class, 'boleta'])->name('dulceria.boleta');
-    Route::get('/mis-pedidos-dulceria', [DulceriaController::class, 'misPedidos'])->name('dulceria.mis-pedidos');
-});
-
-// RUTAS DE ADMINISTRADOR
-
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    
-    // Dashboard
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-
-    // Gestión de Películas
-    Route::resource('peliculas', AdminPeliculaController::class);
-    Route::get('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'programarFunciones'])->name('peliculas.programar-funciones');
-    Route::post('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'programarFunciones']);
-
-    // Gestión de Dulcería
-    Route::resource('dulceria', AdminDulceriaController::class);
-    Route::get('/dulceria-pedidos', [AdminDulceriaController::class, 'pedidos'])->name('dulceria.pedidos');
-    Route::patch('/dulceria-pedidos/{pedido}/estado', [AdminDulceriaController::class, 'cambiarEstadoPedido'])->name('dulceria.cambiar-estado');
-});
-
-
-// Rutas públicas de cines
-Route::get('/cines', [CineController::class, 'index'])->name('cines.index');
-Route::get('/cine/{cine}', [CineController::class, 'show'])->name('cine.show');
-Route::get('/cine/{cine}/programacion', [CineController::class, 'programacion'])->name('cine.programacion');
-
-// RUTAS AJAX PARA DATOS DINÁMICOS
-
-// Para obtener funciones de un cine específico
-Route::get('/api/cines/{cine}/funciones', [CineController::class, 'funcionesAjax'])->name('api.cine.funciones');
-
-// Para obtener salas de un cine específico
-Route::get('/api/cines/{cine}/salas', [CineController::class, 'salasAjax'])->name('api.cine.salas');
-
-// Para obtener películas que se proyectan en un cine
-Route::get('/api/cines/{cine}/peliculas', [CineController::class, 'peliculasAjax'])->name('api.cine.peliculas');
-
-// Para obtener horarios disponibles
-Route::get('/api/cines/{cine}/horarios', [CineController::class, 'horariosDisponibles'])->name('api.cine.horarios');
-
-Route::get('/api/cines/{cine}/informacion', [CineController::class, 'informacion'])->name('api.cine.informacion');
-
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/api/cines/{cine}/estadisticas', [CineController::class, 'estadisticas'])->name('api.cine.estadisticas');
-});
-
-// RUTAS PARA BÚSQUEDA Y FILTROS
-
-Route::get('/api/cines/buscar/ubicacion', [CineController::class, 'buscarPorUbicacion'])->name('api.cines.buscar-ubicacion');
+// API para obtener funciones de una película específica
 Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, $peliculaId) {
     try {
-        // Logs iniciales
         \Log::info('=== API FUNCIONES INICIADA ===', [
             'pelicula_id' => $peliculaId,
             'request_data' => $request->all(),
             'timestamp' => now()->format('Y-m-d H:i:s')
         ]);
 
-        // 1. Buscar película
+        // 1. Verificar que la película existe
         $pelicula = \App\Models\Pelicula::find($peliculaId);
         if (!$pelicula) {
             \Log::error('Película no encontrada', ['pelicula_id' => $peliculaId]);
             return response()->json(['error' => 'Película no encontrada'], 404);
         }
 
-        // 2. Parámetros
-        $fecha = $request->get('fecha');
-        $ciudadId = $request->get('ciudad_id');
-        
-        if (!$fecha || !$ciudadId) {
-            \Log::error('Parámetros faltantes', ['fecha' => $fecha, 'ciudad_id' => $ciudadId]);
-            return response()->json(['error' => 'Fecha y ciudad son requeridos'], 400);
+        if (!$pelicula->activa) {
+            return response()->json(['error' => 'Película no activa'], 404);
         }
 
-        \Log::info('Parámetros validados', [
-            'pelicula' => $pelicula->titulo,
-            'fecha_estreno' => $pelicula->fecha_estreno->format('Y-m-d'),
-            'fecha_consulta' => $fecha,
-            'ciudad_id' => $ciudadId
+        // 2. Obtener parámetros
+        $fecha = $request->get('fecha', \Carbon\Carbon::today()->format('Y-m-d'));
+        $ciudadId = $request->get('ciudad_id');
+        $cineId = $request->get('cine_id');
+
+        \Log::info('Parámetros de búsqueda', [
+            'fecha' => $fecha,
+            'ciudad_id' => $ciudadId,
+            'cine_id' => $cineId
         ]);
 
-        // 3. Validar fecha de estreno
-        $fechaConsulta = \Carbon\Carbon::parse($fecha);
-        if ($fechaConsulta->lt($pelicula->fecha_estreno)) {
-            \Log::info('Fecha anterior al estreno - retornando vacío');
-            return response()->json([]);
-        }
-
-        // 4. Consulta simple y directa
-        $funciones = \App\Models\Funcion::select([
+        // 3. Usar Query Builder directo para mayor control
+        $query = \DB::table('funciones')
+            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+            ->join('cines', 'salas.cine_id', '=', 'cines.id')
+            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+            ->select(
                 'funciones.id',
-                'funciones.hora_funcion', 
+                'funciones.hora_funcion',
                 'funciones.formato',
                 'funciones.tipo',
                 'funciones.precio',
@@ -158,30 +101,40 @@ Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, $pe
                 'cines.direccion as cine_direccion',
                 'ciudades.id as ciudad_id',
                 'ciudades.nombre as ciudad_nombre'
-            ])
-            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-            ->join('cines', 'salas.cine_id', '=', 'cines.id')
-            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
-            ->where('funciones.pelicula_id', $pelicula->id)
-            ->where('funciones.fecha_funcion', $fecha)
-            ->where('ciudades.id', $ciudadId)
-            ->orderBy('funciones.hora_funcion')
-            ->get();
+            )
+            ->where('funciones.pelicula_id', $peliculaId)
+            ->where('funciones.fecha_funcion', $fecha);
 
-        \Log::info('Consulta ejecutada', [
-            'funciones_encontradas' => $funciones->count(),
-            'primera_funcion' => $funciones->first()
+        // 4. Aplicar filtros
+        if ($ciudadId) {
+            $query->where('ciudades.id', $ciudadId);
+        }
+
+        if ($cineId) {
+            $query->where('cines.id', $cineId);
+        }
+
+        // 5. Obtener resultados
+        $funciones = $query->orderBy('funciones.hora_funcion')->get();
+
+        \Log::info('Funciones encontradas', [
+            'count' => $funciones->count(),
+            'primera_funcion' => $funciones->first() ? [
+                'id' => $funciones->first()->id,
+                'hora' => $funciones->first()->hora_funcion,
+                'cine' => $funciones->first()->cine_nombre
+            ] : null
         ]);
 
-        // 5. Transformar a formato esperado por el frontend
+        // 6. Formatear para el frontend
         $funcionesFormatted = $funciones->map(function($funcion) {
             return [
                 'id' => $funcion->id,
                 'hora_funcion' => $funcion->hora_funcion,
                 'formato' => $funcion->formato,
                 'tipo' => $funcion->tipo,
-                'precio' => $funcion->precio,
-                'tarifa_servicio' => $funcion->tarifa_servicio,
+                'precio' => (float) $funcion->precio,
+                'tarifa_servicio' => (float) $funcion->tarifa_servicio,
                 'sala' => [
                     'id' => $funcion->sala_id,
                     'nombre' => $funcion->sala_nombre,
@@ -218,48 +171,14 @@ Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, $pe
         return response()->json([
             'error' => 'Error interno del servidor',
             'message' => app()->environment('local') ? $e->getMessage() : 'Error al cargar funciones',
-            'debug' => [
+            'debug_info' => app()->environment('local') ? [
                 'pelicula_id' => $peliculaId ?? 'null',
-                'line' => app()->environment('local') ? $e->getLine() : null
-            ]
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ] : null
         ], 500);
     }
 })->name('api.pelicula.funciones');
-// API para obtener funciones de una película específica
-Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, Pelicula $pelicula) {
-    try {
-        $fecha = $request->get('fecha', Carbon::today()->format('Y-m-d'));
-        $ciudadId = $request->get('ciudad_id');
-        $cineId = $request->get('cine_id');
-        
-        $query = $pelicula->funciones()->with(['sala.cine.ciudad']);
-        
-        if ($fecha) {
-            $query->where('fecha_funcion', $fecha);
-        }
-        
-        if ($ciudadId) {
-            $query->whereHas('sala.cine', function($q) use ($ciudadId) {
-                $q->where('ciudad_id', $ciudadId);
-            });
-        }
-        
-        if ($cineId) {
-            $query->whereHas('sala', function($q) use ($cineId) {
-                $q->where('cine_id', $cineId);
-            });
-        }
-        
-        $funciones = $query->orderBy('hora_funcion')->get();
-        
-        return response()->json($funciones);
-        
-    } catch (\Exception $e) {
-        \Log::error('Error en API funciones: ' . $e->getMessage());
-        return response()->json(['error' => 'Error interno del servidor'], 500);
-    }
-})->name('api.pelicula.funciones');
-
 // API para próximos estrenos
 Route::get('/api/peliculas/proximos-estrenos', function() {
     try {
@@ -289,78 +208,225 @@ Route::get('/api/ciudades/{ciudadId}/cines', function($ciudadId) {
     }
 })->name('api.ciudades.cines');
 
-// Resto de rutas API para cines
+// APIs de cines
 Route::get('/api/cines/{cine}/funciones', [CineController::class, 'funcionesAjax'])->name('api.cine.funciones');
 Route::get('/api/cines/{cine}/salas', [CineController::class, 'salasAjax'])->name('api.cine.salas');
-Route::get('/api/cines/{cine}/peliculas', [CineController::class, 'peliculasAjax'])->name('api.cine.peliculas');
-Route::get('/api/cines/{cine}/horarios', [CineController::class, 'horariosDisponibles'])->name('api.cine.horarios');
 Route::get('/api/cines/{cine}/informacion', [CineController::class, 'informacion'])->name('api.cine.informacion');
-Route::get('/api/test/peliculas/{pelicula}/funciones', function(Request $request, $peliculaId) {
-    \Log::info('=== TEST API INICIADA ===', [
-        'pelicula_id' => $peliculaId,
-        'request' => $request->all()
-    ]);
 
+// ========================================
+// RUTAS PROTEGIDAS (REQUIEREN LOGIN)
+// ========================================
+
+Route::middleware(['auth'])->group(function () {
+    
+    // ===== RESERVAS - TODAS REQUIEREN LOGIN =====
+    Route::get('/reserva/{funcion}/asientos', [ReservaController::class, 'seleccionarAsientos'])->name('reserva.asientos');
+    Route::post('/reserva/{funcion}/confirmar', [ReservaController::class, 'confirmarReserva'])->name('reserva.confirmar');
+    Route::post('/reserva/{funcion}/procesar', [ReservaController::class, 'procesar'])->name('reserva.procesar');
+    Route::get('/reserva/{reserva}/boleta', [ReservaController::class, 'boleta'])->name('reservas.boleta');
+    Route::get('/mis-reservas', [ReservaController::class, 'misReservas'])->name('reservas.mis-reservas');
+
+    // ===== DULCERÍA - CHECKOUT Y PEDIDOS REQUIEREN LOGIN =====
+    Route::get('/dulceria/checkout', [DulceriaController::class, 'checkout'])->name('dulceria.checkout');
+    Route::post('/dulceria/procesar-pedido', [DulceriaController::class, 'procesarPedido'])->name('dulceria.procesar-pedido');
+    Route::get('/dulceria/{pedido}/boleta', [DulceriaController::class, 'boleta'])->name('dulceria.boleta');
+    Route::get('/mis-pedidos-dulceria', [DulceriaController::class, 'misPedidos'])->name('dulceria.mis-pedidos');
+});
+
+// ========================================
+// RUTAS DE ADMINISTRADOR
+// ========================================
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // Dashboard
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    
+    // Gestión de Películas
+    Route::resource('peliculas', AdminPeliculaController::class);
+    Route::post('peliculas/{pelicula}/toggle-status', [AdminPeliculaController::class, 'toggleStatus'])->name('peliculas.toggle-status');
+    Route::get('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'programarFunciones'])->name('peliculas.programar-funciones');
+    Route::post('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'guardarFunciones']);
+    
+    // Gestión de Dulcería
+    Route::resource('dulceria', AdminDulceriaController::class);
+    Route::post('dulceria/{producto}/toggle-status', [AdminDulceriaController::class, 'toggleStatus'])->name('dulceria.toggle-status');
+    Route::get('/dulceria-pedidos', [AdminDulceriaController::class, 'pedidos'])->name('dulceria.pedidos');
+    Route::patch('/dulceria-pedidos/{pedido}/estado', [AdminDulceriaController::class, 'cambiarEstadoPedido'])->name('dulceria.cambiar-estado');
+    
+    // Reportes y estadísticas (solo admins)
+    Route::get('/ventas', [AdminController::class, 'reporteVentas'])->name('ventas');
+    Route::get('/reservas', [AdminController::class, 'reservas'])->name('reservas');
+    Route::get('/api/cines/{cine}/estadisticas', [CineController::class, 'estadisticas'])->name('api.cine.estadisticas');
+});
+Route::get('/debug/pelicula/{id}/funciones', function($id) {
     try {
-        $pelicula = \App\Models\Pelicula::find($peliculaId);
-        $fecha = $request->get('fecha');
-        $ciudadId = $request->get('ciudad_id');
-
-        if (!$pelicula || !$fecha || !$ciudadId) {
-            return response()->json(['error' => 'Parámetros faltantes'], 400);
+        \Log::info('=== DEBUG INICIADO ===', ['pelicula_id' => $id]);
+        
+        // 1. Verificar que la película existe
+        $pelicula = \App\Models\Pelicula::find($id);
+        if (!$pelicula) {
+            return response()->json(['error' => 'Película no encontrada'], 404);
         }
-
-        // Consulta muy simple para probar
-        $funciones = \DB::table('funciones')
-            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-            ->join('cines', 'salas.cine_id', '=', 'cines.id')
-            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
-            ->select(
-                'funciones.id',
-                'funciones.hora_funcion',
-                'funciones.formato',
-                'funciones.tipo',
-                'funciones.precio',
-                'salas.nombre as sala_nombre',
-                'cines.nombre as cine_nombre',
-                'cines.direccion as cine_direccion'
-            )
-            ->where('funciones.pelicula_id', $peliculaId)
-            ->where('funciones.fecha_funcion', $fecha)
-            ->where('ciudades.id', $ciudadId)
-            ->orderBy('funciones.hora_funcion')
-            ->get();
-
+        
+        \Log::info('Película encontrada', [
+            'id' => $pelicula->id,
+            'titulo' => $pelicula->titulo,
+            'activa' => $pelicula->activa
+        ]);
+        
+        // 2. Verificar funciones básicas
+        $funcionesCount = \DB::table('funciones')
+            ->where('pelicula_id', $id)
+            ->count();
+        
+        \Log::info('Funciones en DB', ['count' => $funcionesCount]);
+        
+        // 3. Probar la relación Eloquent
+        $funcionesEloquent = $pelicula->funciones()->count();
+        
+        \Log::info('Funciones vía Eloquent', ['count' => $funcionesEloquent]);
+        
+        // 4. Obtener una función simple
+        $primeraFuncion = \DB::table('funciones')
+            ->where('pelicula_id', $id)
+            ->first();
+        
         return response()->json([
             'debug' => true,
-            'count' => $funciones->count(),
-            'funciones' => $funciones->map(function($f) {
-                return [
-                    'id' => $f->id,
-                    'hora_funcion' => $f->hora_funcion,
-                    'formato' => $f->formato,
-                    'tipo' => $f->tipo,
-                    'precio' => $f->precio,
-                    'sala' => [
-                        'nombre' => $f->sala_nombre,
-                        'cine' => [
-                            'nombre' => $f->cine_nombre,
-                            'direccion' => $f->cine_direccion
-                        ]
-                    ]
-                ];
-            })
+            'pelicula' => [
+                'id' => $pelicula->id,
+                'titulo' => $pelicula->titulo,
+                'activa' => $pelicula->activa
+            ],
+            'funciones_count_db' => $funcionesCount,
+            'funciones_count_eloquent' => $funcionesEloquent,
+            'primera_funcion' => $primeraFuncion,
+            'status' => 'ok'
         ]);
-
+        
     } catch (\Exception $e) {
-        \Log::error('Error en test API', [
+        \Log::error('Error en debug', [
             'error' => $e->getMessage(),
-            'line' => $e->getLine()
+            'line' => $e->getLine(),
+            'file' => $e->getFile()
         ]);
-
+        
         return response()->json([
             'error' => $e->getMessage(),
-            'line' => $e->getLine()
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
         ], 500);
     }
 });
+//____________-----------------
+
+// AGREGA esta ruta temporal para debug detallado
+Route::get('/debug/funciones-detallado/{peliculaId}', function(Request $request, $peliculaId) {
+    try {
+        $fecha = $request->get('fecha', '2025-07-10'); // Fecha específica que estás probando
+        $ciudadId = $request->get('ciudad_id', 8); // Ciudad específica que estás probando
+        
+        $debug = [];
+        
+        // 1. Verificar película
+        $pelicula = \App\Models\Pelicula::find($peliculaId);
+        $debug['pelicula'] = $pelicula ? [
+            'id' => $pelicula->id,
+            'titulo' => $pelicula->titulo,
+            'activa' => $pelicula->activa
+        ] : null;
+        
+        // 2. Total de funciones de esta película
+        $totalFunciones = \DB::table('funciones')
+            ->where('pelicula_id', $peliculaId)
+            ->count();
+        $debug['total_funciones_pelicula'] = $totalFunciones;
+        
+        // 3. Funciones por fecha
+        $funcionesPorFecha = \DB::table('funciones')
+            ->where('pelicula_id', $peliculaId)
+            ->selectRaw('fecha_funcion, COUNT(*) as count')
+            ->groupBy('fecha_funcion')
+            ->orderBy('fecha_funcion')
+            ->get();
+        $debug['funciones_por_fecha'] = $funcionesPorFecha;
+        
+        // 4. Verificar si existe la fecha específica
+        $funcionesFechaEspecifica = \DB::table('funciones')
+            ->where('pelicula_id', $peliculaId)
+            ->where('fecha_funcion', $fecha)
+            ->count();
+        $debug['funciones_fecha_especifica'] = [
+            'fecha' => $fecha,
+            'count' => $funcionesFechaEspecifica
+        ];
+        
+        // 5. Si hay funciones en esa fecha, verificar ciudades
+        if ($funcionesFechaEspecifica > 0) {
+            $ciudadesFunciones = \DB::table('funciones')
+                ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+                ->join('cines', 'salas.cine_id', '=', 'cines.id')
+                ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+                ->where('funciones.pelicula_id', $peliculaId)
+                ->where('funciones.fecha_funcion', $fecha)
+                ->selectRaw('ciudades.id, ciudades.nombre, COUNT(*) as count')
+                ->groupBy('ciudades.id', 'ciudades.nombre')
+                ->get();
+            $debug['ciudades_con_funciones'] = $ciudadesFunciones;
+        }
+        
+        // 6. Verificar la consulta completa con todos los filtros
+        $funcionesCompleta = \DB::table('funciones')
+            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+            ->join('cines', 'salas.cine_id', '=', 'cines.id')
+            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+            ->where('funciones.pelicula_id', $peliculaId)
+            ->where('funciones.fecha_funcion', $fecha)
+            ->where('ciudades.id', $ciudadId)
+            ->count();
+        $debug['funciones_con_todos_filtros'] = $funcionesCompleta;
+        
+        // 7. Si no hay resultados, verificar qué ciudades SÍ tienen funciones
+        if ($funcionesCompleta === 0) {
+            $ciudadesDisponibles = \DB::table('funciones')
+                ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+                ->join('cines', 'salas.cine_id', '=', 'cines.id')
+                ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+                ->where('funciones.pelicula_id', $peliculaId)
+                ->where('funciones.fecha_funcion', $fecha)
+                ->select('ciudades.id', 'ciudades.nombre')
+                ->distinct()
+                ->get();
+            $debug['ciudades_disponibles_para_fecha'] = $ciudadesDisponibles;
+        }
+        
+        // 8. Mostrar algunas funciones de ejemplo (sin filtros de ciudad)
+        $funcionesEjemplo = \DB::table('funciones')
+            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+            ->join('cines', 'salas.cine_id', '=', 'cines.id')
+            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+            ->where('funciones.pelicula_id', $peliculaId)
+            ->where('funciones.fecha_funcion', $fecha)
+            ->select(
+                'funciones.id',
+                'funciones.hora_funcion',
+                'cines.nombre as cine_nombre',
+                'ciudades.id as ciudad_id',
+                'ciudades.nombre as ciudad_nombre'
+            )
+            ->limit(5)
+            ->get();
+        $debug['funciones_ejemplo'] = $funcionesEjemplo;
+        
+        return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
+        ], 500);
+    }
+});
+?>

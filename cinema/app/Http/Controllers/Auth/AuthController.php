@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/Auth/AuthController.php - COMPLETO
+// app/Http/Controllers/Auth/AuthController.php
 
 namespace App\Http\Controllers\Auth;
 
@@ -11,8 +11,13 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
+        // Guardar la URL de redirección si viene como parámetro
+        if ($request->has('redirect')) {
+            session(['url.intended' => $request->get('redirect')]);
+        }
+        
         return view('auth.login');
     }
 
@@ -33,7 +38,11 @@ class AuthController extends Controller
                 return redirect()->route('admin.dashboard');
             }
 
-            return redirect()->intended('/');
+            // Si hay una URL de intención (como comprar entradas), redirigir ahí
+            $redirectTo = session('url.intended', '/');
+            session()->forget('url.intended');
+            
+            return redirect()->to($redirectTo)->with('success', '¡Bienvenido de vuelta!');
         }
 
         return back()->withErrors([
@@ -41,8 +50,13 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-    public function showRegistrationForm()
+    public function showRegistrationForm(Request $request)
     {
+        // Guardar la URL de redirección si viene como parámetro
+        if ($request->has('redirect')) {
+            session(['url.intended' => $request->get('redirect')]);
+        }
+        
         return view('auth.register');
     }
 
@@ -63,7 +77,11 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/')->with('success', 'Cuenta creada exitosamente');
+        // Si hay una URL de intención (como comprar entradas), redirigir ahí
+        $redirectTo = session('url.intended', '/');
+        session()->forget('url.intended');
+        
+        return redirect()->to($redirectTo)->with('success', '¡Cuenta creada exitosamente! Ahora puedes comprar tus entradas.');
     }
 
     public function logout(Request $request)
@@ -73,7 +91,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')->with('info', 'Sesión cerrada correctamente');
     }
 }
 

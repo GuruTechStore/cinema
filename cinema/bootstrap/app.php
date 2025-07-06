@@ -11,12 +11,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Registrar middleware personalizado
+        // Registrar middleware personalizado con alias
         $middleware->alias([
+            // Middleware existente de admin
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            
+            // Nuevo middleware para redirección de autenticación
+            'auth.redirect' => \App\Http\Middleware\RedirectIfNotAuthenticated::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
     })->create();
+
 ?>
