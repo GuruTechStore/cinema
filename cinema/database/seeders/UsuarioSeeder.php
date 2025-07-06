@@ -14,7 +14,7 @@ class UsuarioSeeder extends Seeder
         // Usuario admin
         User::create([
             'name' => 'Administrador Sistema',
-            'email' => 'admin@cineplanet.com',
+            'email' => 'admin@salchichon.com',
             'password' => Hash::make('admin123'),
             'rol' => 'admin',
         ]);

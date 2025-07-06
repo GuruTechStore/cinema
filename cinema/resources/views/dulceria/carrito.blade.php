@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/carrito.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Carrito de Dulcería - CinePlanet')
+@section('title', 'Carrito de Dulcería - Butaca del Salchicon')
 
 @section('content')
     <div class="container py-5">

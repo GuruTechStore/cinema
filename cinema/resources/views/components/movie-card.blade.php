@@ -13,15 +13,20 @@
                 </div>
             @endif
         </div>
-        <div class="card-body p-3">
-            <h6 class="card-title fw-bold text-truncate" title="{{ $pelicula->titulo }}">
+        <div class="card-body p-3 d-flex flex-column">
+            <h6 class="card-title fw-bold mb-2" style="line-height: 1.2; min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                 {{ $pelicula->titulo }}
             </h6>
+            
             <p class="card-text small text-muted mb-2">{{ $pelicula->genero }}</p>
             <p class="card-text small text-muted mb-3">{{ $pelicula->getDuracionFormateada() }}</p>
-            <a href="{{ route('pelicula.show', $pelicula) }}" class="btn btn-primary btn-sm w-100">
-                <i class="fas fa-ticket-alt me-1"></i>Comprar
-            </a>
+            
+            {{-- Botón al final --}}
+            <div class="mt-auto">
+                <a href="{{ route('pelicula.show', $pelicula) }}" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-ticket-alt me-1"></i>Comprar
+                </a>
+            </div>
         </div>
     </div>
 </div>

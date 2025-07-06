@@ -1,7 +1,7 @@
 {{-- resources/views/home/peliculas.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Películas - CinePlanet')
+@section('title', 'Películas - Butaca del Salchicon')
 
 @section('content')
     <!-- Page Header -->

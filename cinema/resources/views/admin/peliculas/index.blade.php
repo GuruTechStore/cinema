@@ -74,7 +74,7 @@
                         @forelse($peliculas as $pelicula)
                         <tr>
                             <td>
-                                <img src="{{ $pelicula->poster ? asset('storage/' . $pelicula->poster) : asset('images/posters/placeholder.jpg') }}" 
+                                <img src="{{ $pelicula->poster ? asset('storage/' . $pelicula->poster) : asset('images/posters/') }}" 
                                      alt="{{ $pelicula->titulo }}" class="rounded" style="width: 50px; height: 75px; object-fit: cover;">
                             </td>
                             <td>

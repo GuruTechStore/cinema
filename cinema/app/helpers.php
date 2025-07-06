@@ -1,4 +1,3 @@
-{{-- app/helpers.php --}}
 <?php
 
 if (!function_exists('formatPrice')) {

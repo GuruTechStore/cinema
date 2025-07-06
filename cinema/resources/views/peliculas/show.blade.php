@@ -1,7 +1,7 @@
 {{-- resources/views/peliculas/show.blade.php --}}
 @extends('layouts.app')
 
-@section('title', $pelicula->titulo . ' - CinePlanet')
+@section('title', $pelicula->titulo . ' - Butaca del Salchicon')
 
 @section('content')
     <!-- Hero Section -->

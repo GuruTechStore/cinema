@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/index.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Dulcería - CinePlanet')
+@section('title', 'Dulcería - Butaca del Salchicon')
 
 @section('content')
     <!-- Header -->

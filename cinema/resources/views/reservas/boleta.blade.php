@@ -1,7 +1,7 @@
 {{-- resources/views/reservas/boleta.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Boleta de Reserva - CinePlanet')
+@section('title', 'Boleta de Reserva - Butaca del Salchicon')
 
 @section('content')
 <div class="container py-5">

@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PeliculaController as AdminPeliculaController;
 use App\Http\Controllers\Admin\DulceriaController as AdminDulceriaController;
 use Carbon\Carbon;
 use App\Models\Pelicula;
+
 // RUTAS PÚBLICAS
 
 // Página principal
@@ -130,3 +131,76 @@ Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, Pel
     
     return response()->json($funciones);
 })->name('api.pelicula.funciones');
+
+
+// API para obtener funciones de una película específica
+Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, Pelicula $pelicula) {
+    try {
+        $fecha = $request->get('fecha', Carbon::today()->format('Y-m-d'));
+        $ciudadId = $request->get('ciudad_id');
+        $cineId = $request->get('cine_id');
+        
+        $query = $pelicula->funciones()->with(['sala.cine.ciudad']);
+        
+        if ($fecha) {
+            $query->where('fecha_funcion', $fecha);
+        }
+        
+        if ($ciudadId) {
+            $query->whereHas('sala.cine', function($q) use ($ciudadId) {
+                $q->where('ciudad_id', $ciudadId);
+            });
+        }
+        
+        if ($cineId) {
+            $query->whereHas('sala', function($q) use ($cineId) {
+                $q->where('cine_id', $cineId);
+            });
+        }
+        
+        $funciones = $query->orderBy('hora_funcion')->get();
+        
+        return response()->json($funciones);
+        
+    } catch (\Exception $e) {
+        \Log::error('Error en API funciones: ' . $e->getMessage());
+        return response()->json(['error' => 'Error interno del servidor'], 500);
+    }
+})->name('api.pelicula.funciones');
+
+// API para próximos estrenos
+Route::get('/api/peliculas/proximos-estrenos', function() {
+    try {
+        $peliculas = Pelicula::where('activa', true)
+            ->where('fecha_estreno', '>', Carbon::now())
+            ->orderBy('fecha_estreno', 'asc')
+            ->limit(6)
+            ->get();
+        
+        return response()->json($peliculas);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al cargar próximos estrenos'], 500);
+    }
+})->name('api.peliculas.proximos-estrenos');
+
+// API para obtener cines por ciudad
+Route::get('/api/ciudades/{ciudadId}/cines', function($ciudadId) {
+    try {
+        $cines = \App\Models\Cine::where('ciudad_id', $ciudadId)
+            ->select('id', 'nombre', 'direccion')
+            ->orderBy('nombre')
+            ->get();
+        
+        return response()->json($cines);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al cargar cines'], 500);
+    }
+})->name('api.ciudades.cines');
+
+// Resto de rutas API para cines
+Route::get('/api/cines/{cine}/funciones', [CineController::class, 'funcionesAjax'])->name('api.cine.funciones');
+Route::get('/api/cines/{cine}/salas', [CineController::class, 'salasAjax'])->name('api.cine.salas');
+Route::get('/api/cines/{cine}/peliculas', [CineController::class, 'peliculasAjax'])->name('api.cine.peliculas');
+Route::get('/api/cines/{cine}/horarios', [CineController::class, 'horariosDisponibles'])->name('api.cine.horarios');
+Route::get('/api/cines/{cine}/informacion', [CineController::class, 'informacion'])->name('api.cine.informacion');
+?>

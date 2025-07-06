@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/boleta.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Boleta de Dulcería - CinePlanet')
+@section('title', 'Boleta de Dulcería - Butaca del Salchicon')
 
 @section('content')
 <div class="container py-5">

@@ -1,7 +1,7 @@
 {{-- resources/views/reservas/seleccionar-asientos.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Seleccionar Asientos - CinePlanet')
+@section('title', 'Seleccionar Asientos - Butaca del Salchicon')
 
 @section('content')
     <div class="container py-5">
