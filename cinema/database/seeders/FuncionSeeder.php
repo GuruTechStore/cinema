@@ -1,27 +1,37 @@
 <?php
-// database/seeders/FuncionSeeder.php
+// database/seeders/FuncionSeeder.php - CORREGIDO
 
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Funcion;
+use App\Models\Pelicula;
 use Carbon\Carbon;
 
 class FuncionSeeder extends Seeder
 {
     public function run()
     {
-        $horarios = ['11:00', '13:45', '14:40', '15:40', '17:15', '18:15', '20:00', '21:00'];
+        $horarios = ['11:00', '13:45', '14:40', '15:40', '17:15', '18:15', '20:00', '21:00', '22:30'];
         $precios = [12.00, 18.00, 25.00];
         $tipos = ['REGULAR', 'GOLD CLASS', 'VELVET'];
         
-        // Crear horarios para los próximos 14 días
-        for ($dia = 0; $dia < 14; $dia++) {
-            $fechaFuncion = Carbon::now()->addDays($dia)->format('Y-m-d');
+        // Obtener todas las películas
+        $peliculas = Pelicula::all();
+        
+        foreach ($peliculas as $pelicula) {
+            // Calcular la fecha de inicio de las funciones
+            $fechaEstreno = $pelicula->fecha_estreno; // Ya es Carbon
+            $hoy = Carbon::today();
             
-            // Para cada película
-            for ($peliculaId = 1; $peliculaId <= 8; $peliculaId++) {
-                // Para algunas salas aleatorias de diferentes cines
+            // Las funciones empiezan desde la fecha de estreno o desde hoy (lo que sea mayor)
+            $fechaInicio = $fechaEstreno->gt($hoy) ? $fechaEstreno : $hoy;
+            
+            // Crear funciones para los próximos 14 días desde la fecha de inicio
+            for ($dia = 0; $dia < 14; $dia++) {
+                $fechaFuncion = $fechaInicio->copy()->addDays($dia);
+                
+                // Para salas aleatorias de diferentes cines
                 $salaIds = range(1, 40); // 8 cines x 5 salas = 40 salas
                 shuffle($salaIds);
                 $salasSeleccionadas = array_slice($salaIds, 0, rand(5, 10));
@@ -38,9 +48,9 @@ class FuncionSeeder extends Seeder
                         
                         try {
                             Funcion::create([
-                                'pelicula_id' => $peliculaId,
+                                'pelicula_id' => $pelicula->id,
                                 'sala_id' => $salaId,
-                                'fecha_funcion' => $fechaFuncion,
+                                'fecha_funcion' => $fechaFuncion->format('Y-m-d'),
                                 'hora_funcion' => $horario,
                                 'formato' => rand(0, 1) ? '2D' : '3D',
                                 'tipo' => $tipos[$indiceTipo],
@@ -54,6 +64,11 @@ class FuncionSeeder extends Seeder
                     }
                 }
             }
+            
+            echo "Funciones creadas para: {$pelicula->titulo} (Estreno: {$fechaEstreno->format('d/m/Y')})\n";
         }
+        
+        echo "\n✅ Seeder de funciones completado. Se respetaron las fechas de estreno.\n";
     }
 }
+

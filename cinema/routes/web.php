@@ -104,35 +104,127 @@ Route::middleware(['auth', 'admin'])->group(function () {
 // RUTAS PARA BÚSQUEDA Y FILTROS
 
 Route::get('/api/cines/buscar/ubicacion', [CineController::class, 'buscarPorUbicacion'])->name('api.cines.buscar-ubicacion');
-Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, Pelicula $pelicula) {
-    $fecha = $request->get('fecha', Carbon::today()->format('Y-m-d'));
-    $ciudadId = $request->get('ciudad_id');
-    $cineId = $request->get('cine_id');
-    
-    $query = $pelicula->funciones()->with('sala.cine.ciudad');
-    
-    if ($fecha) {
-        $query->where('fecha_funcion', $fecha);
-    }
-    
-    if ($ciudadId) {
-        $query->whereHas('sala.cine', function($q) use ($ciudadId) {
-            $q->where('ciudad_id', $ciudadId);
+Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, $peliculaId) {
+    try {
+        // Logs iniciales
+        \Log::info('=== API FUNCIONES INICIADA ===', [
+            'pelicula_id' => $peliculaId,
+            'request_data' => $request->all(),
+            'timestamp' => now()->format('Y-m-d H:i:s')
+        ]);
+
+        // 1. Buscar película
+        $pelicula = \App\Models\Pelicula::find($peliculaId);
+        if (!$pelicula) {
+            \Log::error('Película no encontrada', ['pelicula_id' => $peliculaId]);
+            return response()->json(['error' => 'Película no encontrada'], 404);
+        }
+
+        // 2. Parámetros
+        $fecha = $request->get('fecha');
+        $ciudadId = $request->get('ciudad_id');
+        
+        if (!$fecha || !$ciudadId) {
+            \Log::error('Parámetros faltantes', ['fecha' => $fecha, 'ciudad_id' => $ciudadId]);
+            return response()->json(['error' => 'Fecha y ciudad son requeridos'], 400);
+        }
+
+        \Log::info('Parámetros validados', [
+            'pelicula' => $pelicula->titulo,
+            'fecha_estreno' => $pelicula->fecha_estreno->format('Y-m-d'),
+            'fecha_consulta' => $fecha,
+            'ciudad_id' => $ciudadId
+        ]);
+
+        // 3. Validar fecha de estreno
+        $fechaConsulta = \Carbon\Carbon::parse($fecha);
+        if ($fechaConsulta->lt($pelicula->fecha_estreno)) {
+            \Log::info('Fecha anterior al estreno - retornando vacío');
+            return response()->json([]);
+        }
+
+        // 4. Consulta simple y directa
+        $funciones = \App\Models\Funcion::select([
+                'funciones.id',
+                'funciones.hora_funcion', 
+                'funciones.formato',
+                'funciones.tipo',
+                'funciones.precio',
+                'funciones.tarifa_servicio',
+                'salas.id as sala_id',
+                'salas.nombre as sala_nombre',
+                'cines.id as cine_id',
+                'cines.nombre as cine_nombre',
+                'cines.direccion as cine_direccion',
+                'ciudades.id as ciudad_id',
+                'ciudades.nombre as ciudad_nombre'
+            ])
+            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+            ->join('cines', 'salas.cine_id', '=', 'cines.id')
+            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+            ->where('funciones.pelicula_id', $pelicula->id)
+            ->where('funciones.fecha_funcion', $fecha)
+            ->where('ciudades.id', $ciudadId)
+            ->orderBy('funciones.hora_funcion')
+            ->get();
+
+        \Log::info('Consulta ejecutada', [
+            'funciones_encontradas' => $funciones->count(),
+            'primera_funcion' => $funciones->first()
+        ]);
+
+        // 5. Transformar a formato esperado por el frontend
+        $funcionesFormatted = $funciones->map(function($funcion) {
+            return [
+                'id' => $funcion->id,
+                'hora_funcion' => $funcion->hora_funcion,
+                'formato' => $funcion->formato,
+                'tipo' => $funcion->tipo,
+                'precio' => $funcion->precio,
+                'tarifa_servicio' => $funcion->tarifa_servicio,
+                'sala' => [
+                    'id' => $funcion->sala_id,
+                    'nombre' => $funcion->sala_nombre,
+                    'cine' => [
+                        'id' => $funcion->cine_id,
+                        'nombre' => $funcion->cine_nombre,
+                        'direccion' => $funcion->cine_direccion,
+                        'ciudad' => [
+                            'id' => $funcion->ciudad_id,
+                            'nombre' => $funcion->ciudad_nombre
+                        ]
+                    ]
+                ]
+            ];
         });
+
+        \Log::info('Respuesta preparada', [
+            'count' => $funcionesFormatted->count(),
+            'memoria_usada' => memory_get_usage(true)
+        ]);
+
+        return response()->json($funcionesFormatted);
+
+    } catch (\Exception $e) {
+        \Log::error('ERROR CRÍTICO EN API', [
+            'pelicula_id' => $peliculaId ?? 'null',
+            'error' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+            'request' => $request->all(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'error' => 'Error interno del servidor',
+            'message' => app()->environment('local') ? $e->getMessage() : 'Error al cargar funciones',
+            'debug' => [
+                'pelicula_id' => $peliculaId ?? 'null',
+                'line' => app()->environment('local') ? $e->getLine() : null
+            ]
+        ], 500);
     }
-    
-    if ($cineId) {
-        $query->whereHas('sala', function($q) use ($cineId) {
-            $q->where('cine_id', $cineId);
-        });
-    }
-    
-    $funciones = $query->orderBy('hora_funcion')->get();
-    
-    return response()->json($funciones);
 })->name('api.pelicula.funciones');
-
-
 // API para obtener funciones de una película específica
 Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, Pelicula $pelicula) {
     try {
@@ -203,4 +295,72 @@ Route::get('/api/cines/{cine}/salas', [CineController::class, 'salasAjax'])->nam
 Route::get('/api/cines/{cine}/peliculas', [CineController::class, 'peliculasAjax'])->name('api.cine.peliculas');
 Route::get('/api/cines/{cine}/horarios', [CineController::class, 'horariosDisponibles'])->name('api.cine.horarios');
 Route::get('/api/cines/{cine}/informacion', [CineController::class, 'informacion'])->name('api.cine.informacion');
-?>
+Route::get('/api/test/peliculas/{pelicula}/funciones', function(Request $request, $peliculaId) {
+    \Log::info('=== TEST API INICIADA ===', [
+        'pelicula_id' => $peliculaId,
+        'request' => $request->all()
+    ]);
+
+    try {
+        $pelicula = \App\Models\Pelicula::find($peliculaId);
+        $fecha = $request->get('fecha');
+        $ciudadId = $request->get('ciudad_id');
+
+        if (!$pelicula || !$fecha || !$ciudadId) {
+            return response()->json(['error' => 'Parámetros faltantes'], 400);
+        }
+
+        // Consulta muy simple para probar
+        $funciones = \DB::table('funciones')
+            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+            ->join('cines', 'salas.cine_id', '=', 'cines.id')
+            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+            ->select(
+                'funciones.id',
+                'funciones.hora_funcion',
+                'funciones.formato',
+                'funciones.tipo',
+                'funciones.precio',
+                'salas.nombre as sala_nombre',
+                'cines.nombre as cine_nombre',
+                'cines.direccion as cine_direccion'
+            )
+            ->where('funciones.pelicula_id', $peliculaId)
+            ->where('funciones.fecha_funcion', $fecha)
+            ->where('ciudades.id', $ciudadId)
+            ->orderBy('funciones.hora_funcion')
+            ->get();
+
+        return response()->json([
+            'debug' => true,
+            'count' => $funciones->count(),
+            'funciones' => $funciones->map(function($f) {
+                return [
+                    'id' => $f->id,
+                    'hora_funcion' => $f->hora_funcion,
+                    'formato' => $f->formato,
+                    'tipo' => $f->tipo,
+                    'precio' => $f->precio,
+                    'sala' => [
+                        'nombre' => $f->sala_nombre,
+                        'cine' => [
+                            'nombre' => $f->cine_nombre,
+                            'direccion' => $f->cine_direccion
+                        ]
+                    ]
+                ];
+            })
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error en test API', [
+            'error' => $e->getMessage(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json([
+            'error' => $e->getMessage(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
