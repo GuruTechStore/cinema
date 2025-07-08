@@ -429,4 +429,7 @@ Route::get('/debug/funciones-detallado/{peliculaId}', function(Request $request,
         ], 500);
     }
 });
+Route::get('/debug-asientos', function() {
+    return view('debug.asientos');
+});
 ?>

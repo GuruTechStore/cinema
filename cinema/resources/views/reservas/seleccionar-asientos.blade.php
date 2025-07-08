@@ -178,28 +178,37 @@ $(document).ready(function() {
         actualizarResumen();
     });
 
-    function actualizarResumen() {
-        const cantidad = asientosSeleccionados.length;
-        const subtotalBoletos = cantidad * precioAsiento;
-        const subtotalServicio = cantidad * tarifaServicio;
-        const total = subtotalBoletos + subtotalServicio;
+function actualizarResumen() {
+    const cantidad = asientosSeleccionados.length;
+    const subtotalBoletos = cantidad * precioAsiento;
+    const subtotalServicio = cantidad * tarifaServicio;
+    const total = subtotalBoletos + subtotalServicio;
 
-        $('#cantidad-boletos').text(cantidad);
-        $('#cantidad-servicio').text(cantidad);
-        $('#subtotal-boletos').text(formatPrice(subtotalBoletos));
-        $('#subtotal-servicio').text(formatPrice(subtotalServicio));
-        $('#total-pagar').text(formatPrice(total));
+    $('#cantidad-boletos').text(cantidad);
+    $('#cantidad-servicio').text(cantidad);
+    $('#subtotal-boletos').text(formatPrice(subtotalBoletos));
+    $('#subtotal-servicio').text(formatPrice(subtotalServicio));
+    $('#total-pagar').text(formatPrice(total));
 
-        if (cantidad > 0) {
-            $('#asientos-seleccionados').text(asientosSeleccionados.join(', '));
-            $('#btn-continuar').prop('disabled', false);
-            $('#input-asientos').val(JSON.stringify(asientosSeleccionados));
-        } else {
-            $('#asientos-seleccionados').text('Ningún asiento seleccionado');
-            $('#btn-continuar').prop('disabled', true);
-            $('#input-asientos').val('');
-        }
+    if (cantidad > 0) {
+        $('#asientos-seleccionados').text(asientosSeleccionados.join(', '));
+        $('#btn-continuar').prop('disabled', false);
+        
+        // Limpiar inputs anteriores
+        $('input[name="asientos[]"]').remove();
+        
+        // Crear un input hidden por cada asiento seleccionado
+        asientosSeleccionados.forEach(function(asiento) {
+            $('#form-reserva').append('<input type="hidden" name="asientos[]" value="' + asiento + '">');
+        });
+        
+    } else {
+        $('#asientos-seleccionados').text('Ningún asiento seleccionado');
+        $('#btn-continuar').prop('disabled', true);
+        
+        // Limpiar inputs de asientos
+        $('input[name="asientos[]"]').remove();
     }
-});
+}});
 </script>
 @endpush

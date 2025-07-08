@@ -392,129 +392,142 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     
-    <script>
-        // Configuración global AJAX
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+<script>
+// Configuración global AJAX
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
+
+// Función para mostrar mensajes de éxito/error
+function showAlert(message, type = 'success') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('body').append(alertHtml);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        $('.alert').fadeOut();
+    }, 5000);
+}
+
+// Función para formatear precios
+function formatPrice(price) {
+    return 'S/ ' + parseFloat(price).toFixed(2);
+}
+
+// Función para actualizar contador del carrito
+function updateCartCount(count) {
+    $('#carrito-count').text(count);
+    
+    // Animación del contador
+    $('#carrito-count').addClass('animate__animated animate__pulse');
+    setTimeout(() => {
+        $('#carrito-count').removeClass('animate__animated animate__pulse');
+    }, 1000);
+}
+
+// Función para confirmar acciones
+function confirmAction(message = '¿Estás seguro?') {
+    return confirm(message);
+}
+
+// Función para mostrar spinner de carga
+function showLoadingSpinner(element) {
+    const originalText = element.html();
+    element.data('original-text', originalText);
+    element.html('<i class="fas fa-spinner fa-spin me-2"></i>Cargando...');
+    element.prop('disabled', true);
+}
+
+function hideLoadingSpinner(element) {
+    const originalText = element.data('original-text');
+    element.html(originalText);
+    element.prop('disabled', false);
+}
+
+// Inicialización cuando el DOM esté listo
+$(document).ready(function() {
+    console.log('App.blade.php JavaScript cargado');
+    
+    // Auto-hide alerts after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut('slow');
+    }, 5000);
+
+    // Tooltip initialization
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Smooth scrolling for anchor links - VERSIÓN CORREGIDA
+    $('a[href^="#"]').on('click', function(event) {
+        // SOLO aplicar a enlaces que realmente apunten a anclas válidas
+        var href = $(this).attr('href');
+        if (href && href.startsWith('#') && href.length > 1) {
+            var target = $(href);
+            if (target.length) {
+                event.preventDefault();
+                $('html, body').stop().animate({
+                    scrollTop: target.offset().top - 100
+                }, 1000);
             }
-        });
-
-        // Función para mostrar mensajes de éxito/error
-        function showAlert(message, type = 'success') {
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
-                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            $('body').append(alertHtml);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                $('.alert').fadeOut();
-            }, 5000);
         }
+    });
 
-        // Función para formatear precios
-        function formatPrice(price) {
-            return 'S/ ' + parseFloat(price).toFixed(2);
-        }
-
-        // Función para actualizar contador del carrito
-        function updateCartCount(count) {
-            $('#carrito-count').text(count);
-            
-            // Animación del contador
-            $('#carrito-count').addClass('animate__animated animate__pulse');
-            setTimeout(() => {
-                $('#carrito-count').removeClass('animate__animated animate__pulse');
-            }, 1000);
-        }
-
-        // Función para confirmar acciones
-        function confirmAction(message = '¿Estás seguro?') {
-            return confirm(message);
-        }
-
-        // Función para mostrar spinner de carga
-        function showLoadingSpinner(element) {
-            const originalText = element.html();
-            element.data('original-text', originalText);
-            element.html('<i class="fas fa-spinner fa-spin me-2"></i>Cargando...');
-            element.prop('disabled', true);
-        }
-
-        function hideLoadingSpinner(element) {
-            const originalText = element.data('original-text');
-            element.html(originalText);
-            element.prop('disabled', false);
-        }
-
-        // Auto-hide alerts after 5 seconds
-        $(document).ready(function() {
-            setTimeout(function() {
-                $('.alert').fadeOut('slow');
-            }, 5000);
-
-            // Tooltip initialization
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-
-            // Smooth scrolling for anchor links
-            $('a[href^="#"]').on('click', function(event) {
-                var target = $(this.getAttribute('href'));
-                if (target.length) {
-                    event.preventDefault();
-                    $('html, body').stop().animate({
-                        scrollTop: target.offset().top - 100
-                    }, 1000);
-                }
-            });
-
-            // Handle dropdown hover on desktop
-            $('.dropdown').hover(
-                function() {
-                    if ($(window).width() > 768) {
-                        $(this).addClass('show');
-                        $(this).find('.dropdown-menu').addClass('show');
-                    }
-                },
-                function() {
-                    if ($(window).width() > 768) {
-                        $(this).removeClass('show');
-                        $(this).find('.dropdown-menu').removeClass('show');
-                    }
-                }
-            );
-
-            // Update cart count on page load
-            @auth
-                updateCartCount({{ session('carrito_dulceria') ? array_sum(array_column(session('carrito_dulceria'), 'cantidad')) : 0 }});
-            @endauth
-        });
-
-        // Global error handler for AJAX
-        $(document).ajaxError(function(event, xhr, settings, thrownError) {
-            if (xhr.status === 419) {
-                showAlert('Tu sesión ha expirado. Por favor, recarga la página.', 'warning');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else if (xhr.status === 500) {
-                showAlert('Error interno del servidor. Por favor, intenta de nuevo.', 'danger');
-            } else if (xhr.status === 403) {
-                showAlert('No tienes permisos para realizar esta acción.', 'warning');
-            } else {
-                showAlert('Ocurrió un error inesperado. Por favor, intenta de nuevo.', 'danger');
+    // Handle dropdown hover on desktop
+    $('.dropdown').hover(
+        function() {
+            if ($(window).width() > 768) {
+                $(this).addClass('show');
+                $(this).find('.dropdown-menu').addClass('show');
             }
-        });
-    </script>
+        },
+        function() {
+            if ($(window).width() > 768) {
+                $(this).removeClass('show');
+                $(this).find('.dropdown-menu').removeClass('show');
+            }
+        }
+    );
 
+    // Update cart count on page load
+    @auth
+        updateCartCount({{ session('carrito_dulceria') ? array_sum(array_column(session('carrito_dulceria'), 'cantidad')) : 0 }});
+    @endauth
+    
+    // Protección para formularios - evitar interferencias
+    $('form').on('submit', function(e) {
+        console.log('Formulario enviándose a:', $(this).attr('action'));
+        console.log('Método del formulario:', $(this).attr('method'));
+        // No hacer preventDefault aquí, dejar que el formulario se envíe naturalmente
+    });
+});
+
+// Global error handler for AJAX
+$(document).ajaxError(function(event, xhr, settings, thrownError) {
+    if (xhr.status === 419) {
+        showAlert('Tu sesión ha expirado. Por favor, recarga la página.', 'warning');
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } else if (xhr.status === 500) {
+        showAlert('Error interno del servidor. Por favor, intenta de nuevo.', 'danger');
+    } else if (xhr.status === 403) {
+        showAlert('No tienes permisos para realizar esta acción.', 'warning');
+    } else {
+        showAlert('Ocurrió un error inesperado. Por favor, intenta de nuevo.', 'danger');
+    }
+});
+</script>
     @stack('scripts')
 </body>
 </html>
