@@ -32,7 +32,11 @@ class PeliculaController extends Controller
 
         // Filtros
         if ($request->filled('buscar')) {
-            $query->where('titulo', 'like', '%' . $request->buscar . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('titulo', 'like', '%' . $request->buscar . '%')
+                  ->orWhere('director', 'like', '%' . $request->buscar . '%')
+                  ->orWhere('genero', 'like', '%' . $request->buscar . '%');
+            });
         }
 
         if ($request->filled('estado')) {
@@ -63,8 +67,9 @@ class PeliculaController extends Controller
 
         $peliculas = $query->paginate(12);
 
-        // Obtener datos para filtros
+        // Obtener géneros únicos para el filtro
         $generos = Pelicula::whereNotNull('genero')
+            ->where('genero', '!=', '')
             ->get()
             ->pluck('genero')
             ->flatMap(function($genero) {
@@ -87,47 +92,58 @@ class PeliculaController extends Controller
 
     public function store(Request $request)
     {
+        // Validación usando solo campos existentes
         $request->validate([
-            'titulo' => 'required|string|max:255|unique:peliculas,titulo',
-            'descripcion' => 'nullable|string|max:500',
-            'sinopsis' => 'nullable|string|max:2000',
-            'reparto' => 'nullable|string|max:500',
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:1000',
             'genero' => 'required|string|max:255',
             'duracion' => 'required|integer|min:1|max:300',
             'director' => 'required|string|max:255',
             'clasificacion' => 'required|string|max:10',
-            'idioma' => 'nullable|string|max:50',
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'trailer_url' => 'nullable|url|max:500',
             'fecha_estreno' => 'required|date|after_or_equal:today',
             'activa' => 'nullable|boolean',
             'destacada' => 'nullable|boolean',
         ], [
-            'titulo.unique' => 'Ya existe una película con este título.',
+            'titulo.required' => 'El título es obligatorio.',
+            'titulo.max' => 'El título no puede tener más de 255 caracteres.',
             'duracion.max' => 'La duración no puede ser mayor a 300 minutos.',
+            'duracion.min' => 'La duración debe ser al menos 1 minuto.',
             'poster.max' => 'El poster no puede ser mayor a 2MB.',
+            'poster.mimes' => 'El poster debe ser una imagen válida (JPG, PNG, WEBP).',
             'fecha_estreno.after_or_equal' => 'La fecha de estreno no puede ser en el pasado.',
+            'genero.required' => 'El género es obligatorio.',
+            'director.required' => 'El director es obligatorio.',
+            'clasificacion.required' => 'La clasificación es obligatoria.',
         ]);
 
-        $datos = $request->except(['programar_inmediatamente']);
+        // Preparar datos solo con campos existentes
+        $datos = [
+            'titulo' => $request->titulo,
+            'descripcion' => $request->descripcion,
+            'genero' => $request->genero,
+            'duracion' => $request->duracion,
+            'director' => $request->director,
+            'clasificacion' => $request->clasificacion,
+            'fecha_estreno' => $request->fecha_estreno,
+            'activa' => $request->has('activa'),
+            'destacada' => $request->has('destacada'),
+        ];
 
-        // Procesar poster
+        // Procesar poster si se subió
         if ($request->hasFile('poster')) {
             $datos['poster'] = $request->file('poster')->store('posters', 'public');
         }
 
-        // Establecer valores por defecto
-        $datos['activa'] = $request->has('activa');
-        $datos['destacada'] = $request->has('destacada');
-
+        // Crear la película
         $pelicula = Pelicula::create($datos);
 
-        // Si se marcó programar inmediatamente, redirigir a programación
+        // Determinar redirección
         if ($request->has('programar_inmediatamente')) {
             return redirect()
                 ->route('admin.peliculas.programar-funciones', $pelicula)
-                ->with('success', 'Película creada exitosamente. Ahora programa las funciones.')
-                ->with('info', 'Recuerda asignar cines y horarios para que los usuarios puedan ver esta película.');
+                ->with('success', 'Película "' . $pelicula->titulo . '" creada exitosamente.')
+                ->with('info', 'Ahora programa las funciones para que los usuarios puedan ver esta película.');
         }
 
         return redirect()
@@ -146,7 +162,10 @@ class PeliculaController extends Controller
         $estadisticas = [
             'total_funciones' => $pelicula->funciones()->count(),
             'funciones_futuras' => $pelicula->funciones()->where('fecha_funcion', '>=', Carbon::today())->count(),
-            'cines_asignados' => $pelicula->funciones()->distinct('sala_id')->count(),
+            'cines_asignados' => $pelicula->funciones()
+                ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+                ->distinct('salas.cine_id')
+                ->count(),
             'ciudades_disponibles' => $pelicula->funciones()
                 ->join('salas', 'funciones.sala_id', '=', 'salas.id')
                 ->join('cines', 'salas.cine_id', '=', 'cines.id')
@@ -164,24 +183,32 @@ class PeliculaController extends Controller
 
     public function update(Request $request, Pelicula $pelicula)
     {
+        // Validación
         $request->validate([
-            'titulo' => 'required|string|max:255|unique:peliculas,titulo,' . $pelicula->id,
-            'descripcion' => 'nullable|string|max:500',
-            'sinopsis' => 'nullable|string|max:2000',
-            'reparto' => 'nullable|string|max:500',
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:1000',
             'genero' => 'required|string|max:255',
             'duracion' => 'required|integer|min:1|max:300',
             'director' => 'required|string|max:255',
             'clasificacion' => 'required|string|max:10',
-            'idioma' => 'nullable|string|max:50',
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'trailer_url' => 'nullable|url|max:500',
             'fecha_estreno' => 'required|date',
             'activa' => 'nullable|boolean',
             'destacada' => 'nullable|boolean',
         ]);
 
-        $datos = $request->all();
+        // Preparar datos
+        $datos = [
+            'titulo' => $request->titulo,
+            'descripcion' => $request->descripcion,
+            'genero' => $request->genero,
+            'duracion' => $request->duracion,
+            'director' => $request->director,
+            'clasificacion' => $request->clasificacion,
+            'fecha_estreno' => $request->fecha_estreno,
+            'activa' => $request->has('activa'),
+            'destacada' => $request->has('destacada'),
+        ];
 
         // Procesar poster
         if ($request->hasFile('poster')) {
@@ -191,10 +218,6 @@ class PeliculaController extends Controller
             }
             $datos['poster'] = $request->file('poster')->store('posters', 'public');
         }
-
-        // Establecer valores booleanos
-        $datos['activa'] = $request->has('activa');
-        $datos['destacada'] = $request->has('destacada');
 
         $pelicula->update($datos);
 
@@ -316,7 +339,16 @@ class PeliculaController extends Controller
      */
     public function getSalas(Cine $cine)
     {
-        $salas = $cine->salas()->orderBy('nombre')->get(['id', 'nombre', 'capacidad', 'tipo']);
+        // Usar total_asientos como capacidad si no existe el campo capacidad
+        $salas = $cine->salas()->select('id', 'nombre', 'total_asientos as capacidad')->orderBy('nombre')->get();
+        
+        // Renombrar el campo para compatibilidad
+        $salas->each(function($sala) {
+            if (!isset($sala->capacidad) && isset($sala->total_asientos)) {
+                $sala->capacidad = $sala->total_asientos;
+            }
+        });
+        
         return response()->json($salas);
     }
 
@@ -336,33 +368,6 @@ class PeliculaController extends Controller
             ->route('admin.peliculas.edit', $nuevaPelicula)
             ->with('success', 'Película duplicada exitosamente. Edita los detalles necesarios.')
             ->with('info', 'Recuerda cambiar el título y programar nuevas funciones.');
-    }
-
-    /**
-     * Reporte de una película específica
-     */
-    public function reporte(Pelicula $pelicula)
-    {
-        $estadisticas = [
-            'funciones_totales' => $pelicula->funciones()->count(),
-            'funciones_pasadas' => $pelicula->funciones()->where('fecha_funcion', '<', Carbon::today())->count(),
-            'funciones_futuras' => $pelicula->funciones()->where('fecha_funcion', '>=', Carbon::today())->count(),
-            'reservas_totales' => $pelicula->reservas()->count(),
-            'ingresos_totales' => $pelicula->reservas()->where('estado', 'confirmada')->sum('monto_total'),
-            'cines_asignados' => $pelicula->funciones()
-                ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-                ->distinct('salas.cine_id')
-                ->count(),
-        ];
-
-        $funcionesPorCine = $pelicula->funciones()
-            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-            ->join('cines', 'salas.cine_id', '=', 'cines.id')
-            ->selectRaw('cines.nombre as cine_nombre, COUNT(*) as total_funciones')
-            ->groupBy('cines.id', 'cines.nombre')
-            ->get();
-
-        return view('admin.peliculas.reporte', compact('pelicula', 'estadisticas', 'funcionesPorCine'));
     }
 
     /**
