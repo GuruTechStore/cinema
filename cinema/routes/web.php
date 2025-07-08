@@ -40,12 +40,14 @@ Route::get('/cines', [CineController::class, 'index'])->name('cines.index');
 Route::get('/cine/{cine}', [CineController::class, 'show'])->name('cine.show');
 Route::get('/cine/{cine}/programacion', [CineController::class, 'programacion'])->name('cine.programacion');
 
-// Dulcería (navegación pública, pero checkout requiere login)
+// ========================================
+// DULCERÍA - RUTAS PÚBLICAS (NO REQUIEREN LOGIN)
+// ========================================
 Route::get('/dulceria', [DulceriaController::class, 'index'])->name('dulceria.index');
-Route::post('/dulceria/agregar-carrito', [DulceriaController::class, 'agregarAlCarrito'])->name('dulceria.agregar-carrito');
-Route::get('/dulceria/carrito', [DulceriaController::class, 'verCarrito'])->name('dulceria.carrito');
+Route::post('/dulceria/agregar-carrito', [DulceriaController::class, 'agregarCarrito'])->name('dulceria.agregar-carrito');
+Route::get('/dulceria/carrito', [DulceriaController::class, 'carrito'])->name('dulceria.carrito');
 Route::post('/dulceria/actualizar-carrito', [DulceriaController::class, 'actualizarCarrito'])->name('dulceria.actualizar-carrito');
-Route::delete('/dulceria/eliminar-carrito/{productoId}', [DulceriaController::class, 'eliminarDelCarrito'])->name('dulceria.eliminar-carrito');
+Route::get('/dulceria/eliminar-carrito/{producto}', [DulceriaController::class, 'eliminarCarrito'])->name('dulceria.eliminar-carrito');
 
 // ========================================
 // RUTAS API PÚBLICAS
@@ -179,6 +181,7 @@ Route::get('/api/peliculas/{pelicula}/funciones', function(Request $request, $pe
         ], 500);
     }
 })->name('api.pelicula.funciones');
+
 // API para próximos estrenos
 Route::get('/api/peliculas/proximos-estrenos', function() {
     try {
@@ -242,202 +245,315 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Dashboard
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     
-    // Gestión de Películas
+    // ===== GESTIÓN DE PELÍCULAS =====
     Route::resource('peliculas', AdminPeliculaController::class);
     Route::post('peliculas/{pelicula}/toggle-status', [AdminPeliculaController::class, 'toggleStatus'])->name('peliculas.toggle-status');
     Route::get('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'programarFunciones'])->name('peliculas.programar-funciones');
     Route::post('/peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'guardarFunciones']);
+    Route::post('peliculas/{pelicula}/toggle-status', [AdminPeliculaController::class, 'toggleStatus'])
+        ->name('peliculas.toggle-status');
     
-    // Gestión de Dulcería
+    Route::post('peliculas/{pelicula}/duplicate', [AdminPeliculaController::class, 'duplicate'])
+        ->name('peliculas.duplicate');
+    
+    Route::get('peliculas/{pelicula}/reporte', [AdminPeliculaController::class, 'reporte'])
+        ->name('peliculas.reporte');
+        // Programación de funciones
+    Route::get('peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'programarFunciones'])
+        ->name('peliculas.programar-funciones');
+    
+    Route::post('peliculas/{pelicula}/programar-funciones', [AdminPeliculaController::class, 'guardarFunciones']);
+    
+    // Programación masiva
+    Route::get('programacion-masiva', [AdminPeliculaController::class, 'programacionMasiva'])
+        ->name('peliculas.programacion-masiva');
+    
+    Route::post('programacion-masiva', [AdminPeliculaController::class, 'programacionMasiva']);
+    
+    // ===== GESTIÓN DE DULCERÍA =====
     Route::resource('dulceria', AdminDulceriaController::class);
     Route::post('dulceria/{producto}/toggle-status', [AdminDulceriaController::class, 'toggleStatus'])->name('dulceria.toggle-status');
+    
+    // ===== GESTIÓN DE PEDIDOS DE DULCERÍA =====
     Route::get('/dulceria-pedidos', [AdminDulceriaController::class, 'pedidos'])->name('dulceria.pedidos');
     Route::patch('/dulceria-pedidos/{pedido}/estado', [AdminDulceriaController::class, 'cambiarEstadoPedido'])->name('dulceria.cambiar-estado');
     
-    // Reportes y estadísticas (solo admins)
-    Route::get('/ventas', [AdminController::class, 'reporteVentas'])->name('ventas');
-    Route::get('/reservas', [AdminController::class, 'reservas'])->name('reservas');
-    Route::get('/api/cines/{cine}/estadisticas', [CineController::class, 'estadisticas'])->name('api.cine.estadisticas');
-     Route::post('funciones', [\App\Http\Controllers\Admin\FuncionController::class, 'store'])->name('funciones.store');
+    // ===== GESTIÓN DE FUNCIONES =====
+    Route::post('funciones', [\App\Http\Controllers\Admin\FuncionController::class, 'store'])->name('funciones.store');
     Route::put('funciones/{funcion}', [\App\Http\Controllers\Admin\FuncionController::class, 'update'])->name('funciones.update');
     Route::delete('funciones/{funcion}', [\App\Http\Controllers\Admin\FuncionController::class, 'destroy'])->name('funciones.destroy');
     Route::post('funciones/store-multiple', [\App\Http\Controllers\Admin\FuncionController::class, 'storeMultiple'])->name('funciones.store-multiple');
     
-    // API para obtener salas de un cine
-    Route::get('cines/{cine}/salas', [\App\Http\Controllers\Admin\AdminController::class, 'getSalas'])->name('cines.salas');
+    // ===== APIs ADMIN =====
+    Route::get('cines/{cine}/salas', [AdminController::class, 'getSalas'])->name('cines.salas');
     
+    // ===== REPORTES Y ESTADÍSTICAS =====
+    Route::get('/ventas', [AdminController::class, 'reporteVentas'])->name('ventas');
+    Route::get('/reservas', [AdminController::class, 'reservas'])->name('reservas');
+    Route::get('/api/cines/{cine}/estadisticas', [CineController::class, 'estadisticas'])->name('api.cine.estadisticas');
 });
-Route::get('/debug/pelicula/{id}/funciones', function($id) {
-    try {
-        \Log::info('=== DEBUG INICIADO ===', ['pelicula_id' => $id]);
-        
-        // 1. Verificar que la película existe
-        $pelicula = \App\Models\Pelicula::find($id);
-        if (!$pelicula) {
-            return response()->json(['error' => 'Película no encontrada'], 404);
-        }
-        
-        \Log::info('Película encontrada', [
-            'id' => $pelicula->id,
-            'titulo' => $pelicula->titulo,
-            'activa' => $pelicula->activa
-        ]);
-        
-        // 2. Verificar funciones básicas
-        $funcionesCount = \DB::table('funciones')
-            ->where('pelicula_id', $id)
-            ->count();
-        
-        \Log::info('Funciones en DB', ['count' => $funcionesCount]);
-        
-        // 3. Probar la relación Eloquent
-        $funcionesEloquent = $pelicula->funciones()->count();
-        
-        \Log::info('Funciones vía Eloquent', ['count' => $funcionesEloquent]);
-        
-        // 4. Obtener una función simple
-        $primeraFuncion = \DB::table('funciones')
-            ->where('pelicula_id', $id)
-            ->first();
-        
-        return response()->json([
-            'debug' => true,
-            'pelicula' => [
+
+// ========================================
+// RUTAS DE DEBUG (SOLO EN DESARROLLO)
+// ========================================
+
+if (app()->environment('local', 'testing')) {
+    
+    Route::get('/debug/pelicula/{id}/funciones', function($id) {
+        try {
+            \Log::info('=== DEBUG INICIADO ===', ['pelicula_id' => $id]);
+            
+            // 1. Verificar que la película existe
+            $pelicula = \App\Models\Pelicula::find($id);
+            if (!$pelicula) {
+                return response()->json(['error' => 'Película no encontrada'], 404);
+            }
+            
+            \Log::info('Película encontrada', [
                 'id' => $pelicula->id,
                 'titulo' => $pelicula->titulo,
                 'activa' => $pelicula->activa
-            ],
-            'funciones_count_db' => $funcionesCount,
-            'funciones_count_eloquent' => $funcionesEloquent,
-            'primera_funcion' => $primeraFuncion,
-            'status' => 'ok'
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('Error en debug', [
-            'error' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile()
-        ]);
-        
-        return response()->json([
-            'error' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => basename($e->getFile())
-        ], 500);
-    }
-});
-//____________-----------------
+            ]);
+            
+            // 2. Verificar funciones básicas
+            $funcionesCount = \DB::table('funciones')
+                ->where('pelicula_id', $id)
+                ->count();
+            
+            \Log::info('Funciones en DB', ['count' => $funcionesCount]);
+            
+            // 3. Probar la relación Eloquent
+            $funcionesEloquent = $pelicula->funciones()->count();
+            
+            \Log::info('Funciones vía Eloquent', ['count' => $funcionesEloquent]);
+            
+            // 4. Obtener una función simple
+            $primeraFuncion = \DB::table('funciones')
+                ->where('pelicula_id', $id)
+                ->first();
+            
+            return response()->json([
+                'debug' => true,
+                'pelicula' => [
+                    'id' => $pelicula->id,
+                    'titulo' => $pelicula->titulo,
+                    'activa' => $pelicula->activa
+                ],
+                'funciones_count_db' => $funcionesCount,
+                'funciones_count_eloquent' => $funcionesEloquent,
+                'primera_funcion' => $primeraFuncion,
+                'status' => 'ok'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en debug', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            return response()->json([
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ], 500);
+        }
+    });
 
-// AGREGA esta ruta temporal para debug detallado
-Route::get('/debug/funciones-detallado/{peliculaId}', function(Request $request, $peliculaId) {
-    try {
-        $fecha = $request->get('fecha', '2025-07-10'); // Fecha específica que estás probando
-        $ciudadId = $request->get('ciudad_id', 8); // Ciudad específica que estás probando
-        
-        $debug = [];
-        
-        // 1. Verificar película
-        $pelicula = \App\Models\Pelicula::find($peliculaId);
-        $debug['pelicula'] = $pelicula ? [
-            'id' => $pelicula->id,
-            'titulo' => $pelicula->titulo,
-            'activa' => $pelicula->activa
-        ] : null;
-        
-        // 2. Total de funciones de esta película
-        $totalFunciones = \DB::table('funciones')
-            ->where('pelicula_id', $peliculaId)
-            ->count();
-        $debug['total_funciones_pelicula'] = $totalFunciones;
-        
-        // 3. Funciones por fecha
-        $funcionesPorFecha = \DB::table('funciones')
-            ->where('pelicula_id', $peliculaId)
-            ->selectRaw('fecha_funcion, COUNT(*) as count')
-            ->groupBy('fecha_funcion')
-            ->orderBy('fecha_funcion')
-            ->get();
-        $debug['funciones_por_fecha'] = $funcionesPorFecha;
-        
-        // 4. Verificar si existe la fecha específica
-        $funcionesFechaEspecifica = \DB::table('funciones')
-            ->where('pelicula_id', $peliculaId)
-            ->where('fecha_funcion', $fecha)
-            ->count();
-        $debug['funciones_fecha_especifica'] = [
-            'fecha' => $fecha,
-            'count' => $funcionesFechaEspecifica
-        ];
-        
-        // 5. Si hay funciones en esa fecha, verificar ciudades
-        if ($funcionesFechaEspecifica > 0) {
-            $ciudadesFunciones = \DB::table('funciones')
+    // AGREGA esta ruta temporal para debug detallado
+    Route::get('/debug/funciones-detallado/{peliculaId}', function(Request $request, $peliculaId) {
+        try {
+            $fecha = $request->get('fecha', '2025-07-10');
+            $ciudadId = $request->get('ciudad_id', 8);
+            
+            $debug = [];
+            
+            // 1. Verificar película
+            $pelicula = \App\Models\Pelicula::find($peliculaId);
+            $debug['pelicula'] = $pelicula ? [
+                'id' => $pelicula->id,
+                'titulo' => $pelicula->titulo,
+                'activa' => $pelicula->activa
+            ] : null;
+            
+            // 2. Total de funciones de esta película
+            $totalFunciones = \DB::table('funciones')
+                ->where('pelicula_id', $peliculaId)
+                ->count();
+            $debug['total_funciones_pelicula'] = $totalFunciones;
+            
+            // 3. Funciones por fecha
+            $funcionesPorFecha = \DB::table('funciones')
+                ->where('pelicula_id', $peliculaId)
+                ->selectRaw('fecha_funcion, COUNT(*) as count')
+                ->groupBy('fecha_funcion')
+                ->orderBy('fecha_funcion')
+                ->get();
+            $debug['funciones_por_fecha'] = $funcionesPorFecha;
+            
+            // 4. Verificar si existe la fecha específica
+            $funcionesFechaEspecifica = \DB::table('funciones')
+                ->where('pelicula_id', $peliculaId)
+                ->where('fecha_funcion', $fecha)
+                ->count();
+            $debug['funciones_fecha_especifica'] = [
+                'fecha' => $fecha,
+                'count' => $funcionesFechaEspecifica
+            ];
+            
+            // 5. Si hay funciones en esa fecha, verificar ciudades
+            if ($funcionesFechaEspecifica > 0) {
+                $ciudadesFunciones = \DB::table('funciones')
+                    ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+                    ->join('cines', 'salas.cine_id', '=', 'cines.id')
+                    ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+                    ->where('funciones.pelicula_id', $peliculaId)
+                    ->where('funciones.fecha_funcion', $fecha)
+                    ->selectRaw('ciudades.id, ciudades.nombre, COUNT(*) as count')
+                    ->groupBy('ciudades.id', 'ciudades.nombre')
+                    ->get();
+                $debug['ciudades_con_funciones'] = $ciudadesFunciones;
+            }
+            
+            // 6. Verificar la consulta completa con todos los filtros
+            $funcionesCompleta = \DB::table('funciones')
                 ->join('salas', 'funciones.sala_id', '=', 'salas.id')
                 ->join('cines', 'salas.cine_id', '=', 'cines.id')
                 ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
                 ->where('funciones.pelicula_id', $peliculaId)
                 ->where('funciones.fecha_funcion', $fecha)
-                ->selectRaw('ciudades.id, ciudades.nombre, COUNT(*) as count')
-                ->groupBy('ciudades.id', 'ciudades.nombre')
-                ->get();
-            $debug['ciudades_con_funciones'] = $ciudadesFunciones;
-        }
-        
-        // 6. Verificar la consulta completa con todos los filtros
-        $funcionesCompleta = \DB::table('funciones')
-            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-            ->join('cines', 'salas.cine_id', '=', 'cines.id')
-            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
-            ->where('funciones.pelicula_id', $peliculaId)
-            ->where('funciones.fecha_funcion', $fecha)
-            ->where('ciudades.id', $ciudadId)
-            ->count();
-        $debug['funciones_con_todos_filtros'] = $funcionesCompleta;
-        
-        // 7. Si no hay resultados, verificar qué ciudades SÍ tienen funciones
-        if ($funcionesCompleta === 0) {
-            $ciudadesDisponibles = \DB::table('funciones')
+                ->where('ciudades.id', $ciudadId)
+                ->count();
+            $debug['funciones_con_todos_filtros'] = $funcionesCompleta;
+            
+            // 7. Si no hay resultados, verificar qué ciudades SÍ tienen funciones
+            if ($funcionesCompleta === 0) {
+                $ciudadesDisponibles = \DB::table('funciones')
+                    ->join('salas', 'funciones.sala_id', '=', 'salas.id')
+                    ->join('cines', 'salas.cine_id', '=', 'cines.id')
+                    ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
+                    ->where('funciones.pelicula_id', $peliculaId)
+                    ->where('funciones.fecha_funcion', $fecha)
+                    ->select('ciudades.id', 'ciudades.nombre')
+                    ->distinct()
+                    ->get();
+                $debug['ciudades_disponibles_para_fecha'] = $ciudadesDisponibles;
+            }
+            
+            // 8. Mostrar algunas funciones de ejemplo (sin filtros de ciudad)
+            $funcionesEjemplo = \DB::table('funciones')
                 ->join('salas', 'funciones.sala_id', '=', 'salas.id')
                 ->join('cines', 'salas.cine_id', '=', 'cines.id')
                 ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
                 ->where('funciones.pelicula_id', $peliculaId)
                 ->where('funciones.fecha_funcion', $fecha)
-                ->select('ciudades.id', 'ciudades.nombre')
-                ->distinct()
+                ->select(
+                    'funciones.id',
+                    'funciones.hora_funcion',
+                    'cines.nombre as cine_nombre',
+                    'ciudades.id as ciudad_id',
+                    'ciudades.nombre as ciudad_nombre'
+                )
+                ->limit(5)
                 ->get();
-            $debug['ciudades_disponibles_para_fecha'] = $ciudadesDisponibles;
+            $debug['funciones_ejemplo'] = $funcionesEjemplo;
+            
+            return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ], 500);
         }
-        
-        // 8. Mostrar algunas funciones de ejemplo (sin filtros de ciudad)
-        $funcionesEjemplo = \DB::table('funciones')
-            ->join('salas', 'funciones.sala_id', '=', 'salas.id')
-            ->join('cines', 'salas.cine_id', '=', 'cines.id')
-            ->join('ciudades', 'cines.ciudad_id', '=', 'ciudades.id')
-            ->where('funciones.pelicula_id', $peliculaId)
-            ->where('funciones.fecha_funcion', $fecha)
-            ->select(
-                'funciones.id',
-                'funciones.hora_funcion',
-                'cines.nombre as cine_nombre',
-                'ciudades.id as ciudad_id',
-                'ciudades.nombre as ciudad_nombre'
-            )
-            ->limit(5)
-            ->get();
-        $debug['funciones_ejemplo'] = $funcionesEjemplo;
-        
-        return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
-        
-    } catch (\Exception $e) {
+    });
+
+    Route::get('/debug-asientos', function() {
+        return view('debug.asientos');
+    });
+
+    // ===== RUTAS DE DEBUG PARA STORAGE Y DULCERÍA =====
+    Route::get('/debug/storage-info', function() {
         return response()->json([
-            'error' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => basename($e->getFile())
-        ], 500);
-    }
-});
-Route::get('/debug-asientos', function() {
-    return view('debug.asientos');
-});
+            'storage_path' => storage_path('app/public'),
+            'public_path' => public_path('storage'),
+            'storage_link_exists' => is_link(public_path('storage')),
+            'directories' => [
+                'dulceria' => \Storage::disk('public')->exists('dulceria'),
+                'peliculas' => \Storage::disk('public')->exists('peliculas'),
+                'cines' => \Storage::disk('public')->exists('cines'),
+            ],
+            'files_in_dulceria' => \Storage::disk('public')->files('dulceria'),
+            'storage_info' => getStorageInfo()
+        ]);
+    });
+    
+    Route::get('/debug/fix-storage', function() {
+        try {
+            // Crear enlace simbólico si no existe
+            if (!is_link(public_path('storage'))) {
+                \Artisan::call('storage:link');
+            }
+            
+            // Asegurar que existan los directorios necesarios
+            ensureStorageDirectories();
+            
+            // Limpiar cache
+            \Artisan::call('config:clear');
+            \Artisan::call('cache:clear');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Storage configurado correctamente',
+                'storage_link' => is_link(public_path('storage')),
+                'directories_created' => ['dulceria', 'peliculas', 'cines', 'usuarios']
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    });
+
+    Route::get('/debug/test-image-upload', function() {
+        try {
+            // Crear una imagen de prueba
+            $testImage = imagecreate(200, 200);
+            $white = imagecolorallocate($testImage, 255, 255, 255);
+            $black = imagecolorallocate($testImage, 0, 0, 0);
+            imagestring($testImage, 5, 50, 90, 'TEST', $black);
+            
+            $tempPath = sys_get_temp_dir() . '/test_image.png';
+            imagepng($testImage, $tempPath);
+            imagedestroy($testImage);
+            
+            // Simular upload
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $tempPath,
+                'test_image.png',
+                'image/png',
+                null,
+                true
+            );
+            
+            // Usar función helper
+            $path = optimizeImage($uploadedFile, 'dulceria');
+            
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'full_url' => asset('storage/' . $path),
+                'file_exists' => \Storage::disk('public')->exists($path)
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    });
+}
 ?>

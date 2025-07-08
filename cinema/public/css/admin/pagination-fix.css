@@ -1,0 +1,267 @@
+
+.pagination {
+    margin-bottom: 0;
+    gap: 2px;
+}
+
+.pagination .page-item {
+    margin: 0;
+}
+
+.pagination .page-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    color: #6c757d;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.pagination .page-link:hover {
+    z-index: 2;
+    color: #0a58ca;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+}
+
+.pagination .page-link:focus {
+    z-index: 3;
+    color: #0a58ca;
+    background-color: #e9ecef;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.pagination .page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #adb5bd;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+    opacity: 0.65;
+}
+
+/* Iconos de navegación */
+.pagination .page-link svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: currentColor;
+    vertical-align: middle;
+}
+
+.pagination .page-link i {
+    font-size: 14px !important;
+    line-height: 1;
+}
+
+/* Espaciado entre elementos */
+.pagination .page-item:not(:first-child) {
+    margin-left: 2px;
+}
+
+/* Estilos para móviles */
+@media (max-width: 576px) {
+    .pagination .page-link {
+        min-width: 35px;
+        height: 35px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .pagination .page-link svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    
+    .pagination .page-link i {
+        font-size: 12px !important;
+    }
+    
+    /* Ocultar algunos números en móvil para ahorrar espacio */
+    .pagination .page-item:not(.active):not(.disabled):not(:first-child):not(:last-child):not(:nth-child(2)):not(:nth-last-child(2)) {
+        display: none;
+    }
+}
+
+/* Información de resultados */
+.pagination-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Contenedor de paginación */
+.pagination-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+@media (min-width: 768px) {
+    .pagination-wrapper {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+/* ===== ESTILOS ADICIONALES PARA MEJORAR LA APARIENCIA ===== */
+
+/* Cards de productos mejoradas */
+.card.producto-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.125);
+}
+
+.card.producto-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: rgba(0,0,0,0.2);
+}
+
+/* Badges mejorados */
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Botones más pequeños y consistentes */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+}
+
+/* Filtros con mejor apariencia */
+.filtros-container {
+    background: linear-gradient(135deg, #f8f9fc 0%, #f1f3f6 100%);
+    border: 1px solid #e3e6f0;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Form controls más pequeños y consistentes */
+.form-select-sm, .form-control-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+}
+
+/* Mejorar la apariencia de estados vacíos */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Animaciones suaves */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== FIXES ESPECÍFICOS PARA LARAVEL PAGINATION ===== */
+
+/* Arreglar iconos específicos de Laravel */
+.pagination .page-link[rel="prev"],
+.pagination .page-link[rel="next"] {
+    padding: 0.375rem 0.75rem;
+}
+
+.pagination .page-link[rel="prev"] svg,
+.pagination .page-link[rel="next"] svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke-width: 2;
+}
+
+/* Arreglar el texto "Previous" y "Next" */
+.pagination .page-link[rel="prev"]::before {
+    content: "‹";
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.pagination .page-link[rel="next"]::before {
+    content: "›";
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.pagination .page-link[rel="prev"] svg,
+.pagination .page-link[rel="next"] svg {
+    display: none;
+}
+
+/* Mejorar el contraste y legibilidad */
+.pagination .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.pagination .page-link:hover {
+    background-color: #f8f9fc;
+    border-color: #4e73df;
+    color: #4e73df;
+}
+
+/* Asegurar que no se muestren elementos rotos */
+.pagination .page-link:empty {
+    display: none;
+}
+
+/* Responsive mejorado */
+@media (max-width: 480px) {
+    .pagination-wrapper {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1px;
+    }
+    
+    .pagination .page-link {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+        padding: 0.25rem;
+    }
+}

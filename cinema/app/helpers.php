@@ -12,7 +12,16 @@ if (!function_exists('formatPrice')) {
         return 'S/ ' . number_format($price, 2);
     }
 }
-
+if (!function_exists('isAdmin')) {
+    /**
+     * Verificar si el usuario autenticado es administrador
+     * 
+     * @return bool
+     */
+    function isAdmin() {
+        return Auth::check() && Auth::user()->esAdmin();
+    }
+}
 if (!function_exists('formatDate')) {
     /**
      * Formatear fecha usando Carbon

@@ -140,7 +140,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pelicula->funciones()->orderBy('fecha')->orderBy('hora_inicio')->get() as $funcion)
+                                @foreach($pelicula->funciones()->orderBy('fecha_funcion')->orderBy('hora_funcion')->get() as $funcion)
                                 <tr>
                                     <td>
                                         <strong>{{ $funcion->fecha->format('d/m/Y') }}</strong>
