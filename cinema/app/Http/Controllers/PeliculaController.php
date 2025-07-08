@@ -221,5 +221,4 @@ class PeliculaController extends Controller
         }
     }
 }
-
 ?>

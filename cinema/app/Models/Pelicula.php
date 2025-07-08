@@ -1,5 +1,5 @@
 <?php
-// app/Models/Pelicula.php - CORREGIDO
+// Reemplaza app/Models/Pelicula.php:
 
 namespace App\Models;
 
@@ -16,26 +16,36 @@ class Pelicula extends Model
     protected $fillable = [
         'titulo',
         'descripcion',
+        'sinopsis',
+        'reparto',
         'genero',
         'duracion',
         'director',
         'clasificacion',
+        'idioma',
         'poster',
+        'trailer_url',
         'fecha_estreno',
         'activa',
         'destacada',
     ];
 
     protected $casts = [
-        'fecha_estreno' => 'datetime', // Cambiado de 'date' a 'datetime' para que use Carbon
+        'fecha_estreno' => 'date',
         'activa' => 'boolean',
         'destacada' => 'boolean',
     ];
 
-    // Relaciones
+    // RELACIÓN SIN ORDER BY (lo haremos en el controlador/vista cuando sea necesario)
     public function funciones()
     {
         return $this->hasMany(Funcion::class);
+    }
+
+    // Relación con ordenamiento específico cuando se necesite
+    public function funcionesOrdenadas()
+    {
+        return $this->hasMany(Funcion::class)->orderBy('fecha_funcion')->orderBy('hora_funcion');
     }
 
     public function reservas()
@@ -74,67 +84,32 @@ class Pelicula extends Model
             return $horas . 'h ' . $minutos . 'min';
         }
         
-        return $minutos . ' minutos';
+        return $minutos . 'min';
     }
 
-    /**
-     * Verificar si la película ya se estrenó
-     */
-    public function yaSeEstreno()
+    public function getSlugAttribute()
     {
-        return $this->fecha_estreno->lte(Carbon::now());
+        return \Str::slug($this->titulo);
     }
 
-    /**
-     * Verificar si es un próximo estreno
-     */
-    public function esProximoEstreno()
+    public function getTieneTrailerAttribute()
     {
-        return $this->fecha_estreno->gt(Carbon::now());
+        return !empty($this->trailer_url);
     }
 
-    /**
-     * Obtener la fecha mínima para mostrar funciones
-     */
-    public function getFechaMinimaFunciones()
+    public function esDestacada()
     {
-        return $this->fecha_estreno->max(Carbon::today());
+        return $this->destacada;
     }
 
-    /**
-     * Verificar si puede tener funciones en una fecha específica
-     */
-    public function puedeProyectarseEn($fecha)
+    public function estaActiva()
     {
-        $fechaConsulta = Carbon::parse($fecha);
-        return $fechaConsulta->gte($this->fecha_estreno) && $fechaConsulta->gte(Carbon::today());
+        return $this->activa;
     }
 
-    /**
-     * Obtener estado de la película
-     */
-    public function getEstado()
+    public function yaEstreno()
     {
-        if ($this->esProximoEstreno()) {
-            $diasRestantes = $this->fecha_estreno->diffInDays(Carbon::now());
-            if ($diasRestantes == 0) {
-                return 'Se estrena hoy';
-            } elseif ($diasRestantes == 1) {
-                return 'Se estrena mañana';
-            } else {
-                return "Se estrena en {$diasRestantes} días";
-            }
-        }
-        
-        $diasEstreno = Carbon::now()->diffInDays($this->fecha_estreno);
-        if ($diasEstreno < 7) {
-            return 'Estreno reciente';
-        } elseif ($diasEstreno < 30) {
-            return 'En cartelera';
-        } else {
-            return 'En cartelera extendida';
-        }
+        return $this->fecha_estreno <= Carbon::now();
     }
 }
 
-?>

@@ -127,7 +127,7 @@ class AdminController extends Controller
             ->whereBetween('created_at', [$fechaInicio, $fechaFin])
             ->selectRaw('DATE(created_at) as fecha, SUM(monto_total) as total, COUNT(*) as cantidad')
             ->groupBy('fecha')
-            ->orderBy('fecha')
+            ->orderBy('fecha_funcion')
             ->get();
 
         // Ventas de dulcería
@@ -135,7 +135,7 @@ class AdminController extends Controller
             ->whereBetween('created_at', [$fechaInicio, $fechaFin])
             ->selectRaw('DATE(created_at) as fecha, SUM(monto_total) as total, COUNT(*) as cantidad')
             ->groupBy('fecha')
-            ->orderBy('fecha')
+            ->orderBy('fecha_funcion')
             ->get();
 
         // Películas más vendidas
@@ -188,4 +188,23 @@ class AdminController extends Controller
             'fechaFin'
         ));
     }
+    public function getSalas($cineId)
+{
+    try {
+        $cine = \App\Models\Cine::findOrFail($cineId);
+        $salas = $cine->salas()->select('id', 'nombre', 'total_asientos')->get();
+        
+        $salasFormateadas = $salas->map(function($sala) {
+            return [
+                'id' => $sala->id,
+                'nombre' => $sala->nombre,
+                'capacidad' => $sala->total_asientos
+            ];
+        });
+        
+        return response()->json($salasFormateadas);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al cargar salas'], 500);
+    }
+}
 }

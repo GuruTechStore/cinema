@@ -258,6 +258,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/ventas', [AdminController::class, 'reporteVentas'])->name('ventas');
     Route::get('/reservas', [AdminController::class, 'reservas'])->name('reservas');
     Route::get('/api/cines/{cine}/estadisticas', [CineController::class, 'estadisticas'])->name('api.cine.estadisticas');
+     Route::post('funciones', [\App\Http\Controllers\Admin\FuncionController::class, 'store'])->name('funciones.store');
+    Route::put('funciones/{funcion}', [\App\Http\Controllers\Admin\FuncionController::class, 'update'])->name('funciones.update');
+    Route::delete('funciones/{funcion}', [\App\Http\Controllers\Admin\FuncionController::class, 'destroy'])->name('funciones.destroy');
+    Route::post('funciones/store-multiple', [\App\Http\Controllers\Admin\FuncionController::class, 'storeMultiple'])->name('funciones.store-multiple');
+    
+    // API para obtener salas de un cine
+    Route::get('cines/{cine}/salas', [\App\Http\Controllers\Admin\AdminController::class, 'getSalas'])->name('cines.salas');
+    
 });
 Route::get('/debug/pelicula/{id}/funciones', function($id) {
     try {

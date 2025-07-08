@@ -24,7 +24,7 @@
             </div>
             
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.dulceria.update', $dulceria) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.dulceria.update', $dulceria) }}" enctype="multipart/form-data" id="form-editar-producto">
                     @csrf
                     @method('PUT')
                     
@@ -36,28 +36,65 @@
                             <div class="mb-3">
                                 <img src="{{ asset('storage/' . $dulceria->imagen) }}" 
                                      alt="{{ $dulceria->nombre }}" 
-                                     class="img-thumbnail" 
-                                     style="max-width: 200px; max-height: 200px;">
+                                     class="img-thumbnail"
+                                     style="max-width: 200px; max-height: 200px;"
+                                     onerror="this.src='{{ asset('images/dulceria/placeholder.jpg') }}'">
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Archivo: {{ basename($dulceria->imagen) }}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                         @endif
 
                         <!-- Nombre -->
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">Nombre del Producto *</label>
-                            <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
-                                   name="nombre" value="{{ old('nombre', $dulceria->nombre) }}" required
-                                   placeholder="Ej: Canchita Grande">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label fw-bold">
+                                <i class="fas fa-tag me-1"></i>Nombre del Producto *
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('nombre') is-invalid @enderror" 
+                                   id="nombre" 
+                                   name="nombre" 
+                                   value="{{ old('nombre', $dulceria->nombre) }}" 
+                                   required>
                             @error('nombre')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
+                        <!-- Precio -->
+                        <div class="col-md-6">
+                            <label for="precio" class="form-label fw-bold">
+                                <i class="fas fa-dollar-sign me-1"></i>Precio (S/) *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" 
+                                       class="form-control @error('precio') is-invalid @enderror" 
+                                       id="precio" 
+                                       name="precio" 
+                                       value="{{ old('precio', $dulceria->precio) }}" 
+                                       step="0.01" 
+                                       min="0" 
+                                       required>
+                                @error('precio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         <!-- Categoría -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Categoría *</label>
+                        <div class="col-md-6">
+                            <label for="categoria_dulceria_id" class="form-label fw-bold">
+                                <i class="fas fa-folder me-1"></i>Categoría *
+                            </label>
                             <select class="form-select @error('categoria_dulceria_id') is-invalid @enderror" 
-                                    name="categoria_dulceria_id" required>
+                                    id="categoria_dulceria_id" 
+                                    name="categoria_dulceria_id" 
+                                    required>
                                 <option value="">Seleccionar categoría</option>
                                 @foreach($categorias as $categoria)
                                     <option value="{{ $categoria->id }}" 
@@ -71,74 +108,66 @@
                             @enderror
                         </div>
 
+                        <!-- Switches de estado -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-toggle-on me-1"></i>Estado del Producto
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="activo" 
+                                       name="activo" 
+                                       value="1"
+                                       {{ old('activo', $dulceria->activo) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="activo">
+                                    Producto activo
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="es_combo" 
+                                       name="es_combo" 
+                                       value="1"
+                                       {{ old('es_combo', $dulceria->es_combo) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="es_combo">
+                                    Es un combo
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- Descripción -->
                         <div class="col-12">
-                            <label class="form-label fw-bold">Descripción</label>
+                            <label for="descripcion" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-1"></i>Descripción
+                            </label>
                             <textarea class="form-control @error('descripcion') is-invalid @enderror" 
-                                      name="descripcion" rows="3"
-                                      placeholder="Descripción del producto (opcional)">{{ old('descripcion', $dulceria->descripcion) }}</textarea>
+                                      id="descripcion" 
+                                      name="descripcion" 
+                                      rows="3" 
+                                      placeholder="Describe el producto...">{{ old('descripcion', $dulceria->descripcion) }}</textarea>
                             @error('descripcion')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <!-- Precio -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Precio (S/) *</label>
-                            <div class="input-group">
-                                <span class="input-group-text">S/</span>
-                                <input type="number" step="0.01" min="0" 
-                                       class="form-control @error('precio') is-invalid @enderror" 
-                                       name="precio" value="{{ old('precio', $dulceria->precio) }}" required
-                                       placeholder="0.00">
-                            </div>
-                            @error('precio')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Tipo de producto -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Tipo de Producto</label>
-                            <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" 
-                                       name="es_combo" id="es_combo" 
-                                       {{ old('es_combo', $dulceria->es_combo) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="es_combo">
-                                    Es un Combo
-                                </label>
-                                <small class="form-text text-muted d-block">
-                                    Marca si este producto es un combo o paquete
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- Estado -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Estado</label>
-                            <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" 
-                                       name="activo" id="activo"
-                                       {{ old('activo', $dulceria->activo) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="activo">
-                                    Producto Activo
-                                </label>
-                                <small class="form-text text-muted d-block">
-                                    Solo productos activos aparecen en la dulcería
-                                </small>
-                            </div>
-                        </div>
-
                         <!-- Nueva imagen -->
                         <div class="col-12">
-                            <label class="form-label fw-bold">Cambiar Imagen</label>
-                            <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
-                                   name="imagen" accept="image/*" id="imagen-input">
+                            <label for="imagen" class="form-label fw-bold">
+                                <i class="fas fa-image me-1"></i>{{ $dulceria->imagen ? 'Cambiar Imagen' : 'Subir Imagen' }}
+                            </label>
+                            <input type="file" 
+                                   class="form-control @error('imagen') is-invalid @enderror" 
+                                   id="imagen" 
+                                   name="imagen" 
+                                   accept="image/*">
                             @error('imagen')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">
-                                Dejar vacío para mantener la imagen actual. Formatos: JPG, PNG, GIF. Máximo: 2MB
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Formatos: JPG, PNG, GIF. Máximo: 2MB
                             </small>
                             
                             <!-- Preview de nueva imagen -->
@@ -177,9 +206,9 @@
                                 
                                 <div>
                                     <button type="reset" class="btn btn-outline-warning me-2">
-                                        <i class="fas fa-undo me-2"></i>Restaurar
+                                        <i class="fas fa-undo me-2"></i>Restablecer
                                     </button>
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-success" id="btn-guardar">
                                         <i class="fas fa-save me-2"></i>Guardar Cambios
                                     </button>
                                 </div>
@@ -189,46 +218,6 @@
                 </form>
             </div>
         </div>
-
-        <!-- Acciones adicionales -->
-        <div class="card mt-4">
-            <div class="card-header bg-warning text-dark">
-                <h6 class="mb-0">
-                    <i class="fas fa-cogs me-2"></i>Acciones Adicionales
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <form method="POST" action="{{ route('admin.dulceria.toggle-status', $dulceria) }}" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-{{ $dulceria->activo ? 'warning' : 'success' }} w-100"
-                                    onclick="return confirm('¿Cambiar estado del producto?')">
-                                <i class="fas fa-{{ $dulceria->activo ? 'pause' : 'play' }} me-2"></i>
-                                {{ $dulceria->activo ? 'Desactivar' : 'Activar' }}
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <a href="{{ route('admin.dulceria.create') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-plus me-2"></i>Crear Nuevo
-                        </a>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <form method="POST" action="{{ route('admin.dulceria.destroy', $dulceria) }}" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100"
-                                    onclick="return confirm('¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.')">
-                                <i class="fas fa-trash me-2"></i>Eliminar
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @endsection
@@ -236,8 +225,8 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Preview de nueva imagen
-    $('#imagen-input').change(function() {
+    // Preview de imagen al seleccionar archivo
+    $('#imagen').change(function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
@@ -252,43 +241,77 @@ $(document).ready(function() {
     });
 
     // Validación del formulario
-    $('form[action*="update"]').submit(function(e) {
-        let isValid = true;
-        
-        // Validar nombre
-        if (!$('input[name="nombre"]').val().trim()) {
-            isValid = false;
-            alert('El nombre del producto es requerido');
+    $('#form-editar-producto').submit(function(e) {
+        const nombre = $('#nombre').val().trim();
+        const precio = parseFloat($('#precio').val());
+        const categoria = $('#categoria_dulceria_id').val();
+
+        if (!nombre) {
+            e.preventDefault();
+            showAlert('El nombre del producto es obligatorio', 'error');
+            $('#nombre').focus();
             return false;
         }
-        
-        // Validar categoría
-        if (!$('select[name="categoria_dulceria_id"]').val()) {
-            isValid = false;
-            alert('Debe seleccionar una categoría');
-            return false;
-        }
-        
-        // Validar precio
-        const precio = parseFloat($('input[name="precio"]').val());
+
         if (!precio || precio <= 0) {
-            isValid = false;
-            alert('El precio debe ser mayor a 0');
+            e.preventDefault();
+            showAlert('El precio debe ser mayor a 0', 'error');
+            $('#precio').focus();
             return false;
         }
+
+        if (!categoria) {
+            e.preventDefault();
+            showAlert('Selecciona una categoría', 'error');
+            $('#categoria_dulceria_id').focus();
+            return false;
+        }
+
+        // Mostrar loading en el botón
+        $('#btn-guardar').html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...').prop('disabled', true);
+    });
+
+    // Función para mostrar alertas
+    function showAlert(message, type = 'info') {
+        const alertType = type === 'error' ? 'danger' : type;
+        const icon = type === 'error' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
         
-        return isValid;
+        const alert = `
+            <div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
+                <i class="${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        $('.card-body').prepend(alert);
+        
+        // Auto-dismiss después de 5 segundos
+        setTimeout(() => {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+
+    // Contador de caracteres para descripción
+    $('#descripcion').on('input', function() {
+        const maxLength = 500;
+        const currentLength = $(this).val().length;
+        const remaining = maxLength - currentLength;
+        
+        if (!$('#char-counter').length) {
+            $(this).after('<small id="char-counter" class="text-muted"></small>');
+        }
+        
+        $('#char-counter').text(`${currentLength}/${maxLength} caracteres`);
+        
+        if (remaining < 50) {
+            $('#char-counter').removeClass('text-muted').addClass('text-warning');
+        } else {
+            $('#char-counter').removeClass('text-warning').addClass('text-muted');
+        }
     });
 
-    // Confirmaciones para acciones peligrosas
-    $('form[action*="destroy"]').submit(function(e) {
-        return confirm('¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.\n\nTodos los pedidos relacionados mantendrán la información del producto.');
-    });
-
-    $('form[action*="toggle-status"]').submit(function(e) {
-        const action = $(this).find('button').text().trim();
-        return confirm(`¿Estás seguro de ${action.toLowerCase()} este producto?`);
-    });
+    // Trigger del contador al cargar
+    $('#descripcion').trigger('input');
 });
 </script>
 @endpush
