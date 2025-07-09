@@ -321,7 +321,7 @@ class DulceriaController extends Controller
     {
         try {
             $request->validate([
-                'metodo_pago' => 'required|in:efectivo,tarjeta,yape,plin',
+                'metodo_pago' => 'required|in:efectivo,tarjeta,yape,plin,visa,mastercard',
                 'notas' => 'nullable|string|max:500'
             ]);
 

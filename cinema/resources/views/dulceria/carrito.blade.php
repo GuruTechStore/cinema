@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/carrito.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Carrito de Dulcería - Butaca del Salchichon')
+@section('title', 'Carrito de Dulcería - Butaca del Salchicon')
 
 @section('content')
     <div class="container py-5">
@@ -18,22 +18,12 @@
                             @foreach($carrito as $productoId => $item)
                             <div class="row align-items-center border-bottom py-3" data-producto="{{ $productoId }}">
                                 <div class="col-md-2">
-                                    @if($item['imagen'])
-                                        <img src="{{ asset('storage/' . $item['imagen']) }}" 
-                                             class="img-fluid rounded" 
-                                             alt="{{ $item['nombre'] }}"
-                                             style="width: 80px; height: 80px; object-fit: cover;"
-                                             onerror="this.src='{{ asset('images/dulceria/placeholder-dulceria.jpg') }}'">
-                                    @else
-                                        <img src="{{ asset('images/dulceria/placeholder-dulceria.jpg') }}" 
-                                             class="img-fluid rounded" 
-                                             alt="{{ $item['nombre'] }}"
-                                             style="width: 80px; height: 80px; object-fit: cover;">
-                                    @endif
+                                    <img src="{{ $item['imagen'] ? asset('storage/' . $item['imagen']) : asset('images/dulceria/placeholder-dulceria.jpg') }}" 
+                                         class="img-fluid rounded" alt="{{ $item['nombre'] }}">
                                 </div>
                                 <div class="col-md-4">
                                     <h6 class="fw-bold">{{ $item['nombre'] }}</h6>
-                                    <p class="text-muted small mb-0">Precio unitario: S/ {{ number_format($item['precio'], 2) }}</p>
+                                    <p class="text-muted small mb-0">Precio unitario: {{ formatPrice($item['precio']) }}</p>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="input-group">
@@ -48,7 +38,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <span class="fw-bold subtotal" data-producto="{{ $productoId }}">
-                                        S/ {{ number_format($item['precio'] * $item['cantidad'], 2) }}
+                                        {{ formatPrice($item['precio'] * $item['cantidad']) }}
                                     </span>
                                 </div>
                                 <div class="col-md-1">
@@ -60,12 +50,24 @@
                                 </div>
                             </div>
                             @endforeach
+
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-outline-danger" onclick="limpiarCarrito()">
+                                        <i class="fas fa-trash me-2"></i>Vaciar Carrito
+                                    </button>
+                                    <div class="text-end">
+                                        <p class="mb-1">Subtotal: <span id="subtotal-carrito">{{ formatPrice($total) }}</span></p>
+                                        <p class="mb-0 fw-bold fs-5">Total: <span id="total-carrito">{{ formatPrice($total) }}</span></p>
+                                    </div>
+                                </div>
+                            </div>
                         @else
                             <div class="text-center py-5">
                                 <i class="fas fa-shopping-cart display-1 text-muted mb-3"></i>
-                                <h4 class="text-muted">Tu carrito está vacío</h4>
-                                <p class="text-muted">Agrega algunos productos deliciosos</p>
-                                <a href="{{ route('dulceria.index') }}" class="btn btn-primary">
+                                <h5 class="text-muted">Tu carrito está vacío</h5>
+                                <p class="text-muted">Agrega algunos productos deliciosos de nuestra dulcería</p>
+                                <a href="{{ route('dulceria.index') }}" class="btn btn-warning">
                                     <i class="fas fa-candy-cane me-2"></i>Ir a Dulcería
                                 </a>
                             </div>
@@ -74,20 +76,21 @@
                 </div>
             </div>
 
+            <!-- Resumen del pedido -->
             @if(!empty($carrito))
             <div class="col-lg-4">
-                <div class="card shadow-sm position-sticky" style="top: 20px;">
-                    <div class="card-header bg-primary text-white">
+                <div class="card shadow-sm">
+                    <div class="card-header">
                         <h5 class="mb-0">
                             <i class="fas fa-receipt me-2"></i>Resumen del Pedido
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div id="resumen-items">
+                        <div class="mb-3">
                             @foreach($carrito as $item)
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>{{ $item['nombre'] }} x{{ $item['cantidad'] }}</span>
-                                <span>S/ {{ number_format($item['precio'] * $item['cantidad'], 2) }}</span>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>{{ $item['nombre'] }} ({{ $item['cantidad'] }}x)</span>
+                                <span>{{ formatPrice($item['precio'] * $item['cantidad']) }}</span>
                             </div>
                             @endforeach
                         </div>
@@ -95,251 +98,106 @@
                         <hr>
 
                         <div class="d-flex justify-content-between fw-bold fs-5">
-                            <span>Total a Pagar</span>
-                            <span id="total-general">S/ {{ number_format($total, 2) }}</span>
+                            <span>Total:</span>
+                            <span id="total-final">{{ formatPrice($total) }}</span>
                         </div>
 
-                        <div class="d-grid gap-2 mt-4">
-                            <a href="{{ route('dulceria.checkout') }}" class="btn btn-success btn-lg">
-                                <i class="fas fa-credit-card me-2"></i>Proceder al Pago
-                            </a>
-                            <a href="{{ route('dulceria.index') }}" class="btn btn-outline-primary">
-                                <i class="fas fa-arrow-left me-2"></i>Seguir Comprando
-                            </a>
-                        </div>
+                        <a href="{{ route('dulceria.checkout') }}" class="btn btn-warning w-100 mt-4">
+                            <i class="fas fa-credit-card me-2"></i>Proceder al Pago
+                        </a>
 
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                <i class="fas fa-shield-alt me-1"></i>
-                                Compra 100% segura
-                            </small>
-                        </div>
+                        <a href="{{ route('dulceria.index') }}" class="btn btn-outline-primary w-100 mt-2">
+                            <i class="fas fa-arrow-left me-2"></i>Seguir Comprando
+                        </a>
                     </div>
                 </div>
             </div>
             @endif
         </div>
-
-        @if(!empty($carrito))
-        <!-- Productos Relacionados -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <h4 class="mb-4">
-                    <i class="fas fa-star me-2 text-warning"></i>
-                    Productos Recomendados
-                </h4>
-                <div class="row g-3">
-                    <!-- Aquí podrías mostrar productos recomendados -->
-                    <div class="col-md-3">
-                        <div class="card border-0 bg-light">
-                            <div class="card-body text-center py-4">
-                                <i class="fas fa-plus-circle fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-2">¿Algo más?</p>
-                                <a href="{{ route('dulceria.index') }}" class="btn btn-sm btn-outline-primary">
-                                    Ver más productos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
     </div>
 @endsection
 
 @push('scripts')
-<meta name="csrf-token" content="{{ csrf_token() }}">
 <script>
 $(document).ready(function() {
-    // Incrementar cantidad
-    $('.btn-plus').click(function() {
+    console.log('🛒 Carrito de dulcería cargado');
+    
+    // Actualizar cantidad
+    $('.btn-plus, .btn-minus').click(function() {
         const productoId = $(this).data('producto');
         const input = $(`.cantidad-input[data-producto="${productoId}"]`);
         let cantidad = parseInt(input.val());
-        if (cantidad < 10) {
+        
+        if ($(this).hasClass('btn-plus') && cantidad < 10) {
             cantidad++;
-            input.val(cantidad);
-            actualizarCantidad(productoId, cantidad);
-        }
-    });
-
-    // Decrementar cantidad
-    $('.btn-minus').click(function() {
-        const productoId = $(this).data('producto');
-        const input = $(`.cantidad-input[data-producto="${productoId}"]`);
-        let cantidad = parseInt(input.val());
-        if (cantidad > 1) {
+        } else if ($(this).hasClass('btn-minus') && cantidad > 1) {
             cantidad--;
-            input.val(cantidad);
-            actualizarCantidad(productoId, cantidad);
         }
+        
+        input.val(cantidad);
+        actualizarCarrito(productoId, cantidad);
     });
 
-    // Cambio directo en el input
+    // Cambio directo en input
     $('.cantidad-input').change(function() {
         const productoId = $(this).data('producto');
         let cantidad = parseInt($(this).val());
         
-        // Validar rango
-        if (cantidad < 1) {
-            cantidad = 1;
-            $(this).val(cantidad);
-        } else if (cantidad > 10) {
-            cantidad = 10;
-            $(this).val(cantidad);
-        }
+        if (cantidad < 1) cantidad = 1;
+        if (cantidad > 10) cantidad = 10;
         
-        actualizarCantidad(productoId, cantidad);
+        $(this).val(cantidad);
+        actualizarCarrito(productoId, cantidad);
     });
 
-    // Eliminar producto
-    $('.btn-eliminar').click(function() {
+    // Eliminar producto - VERSIÓN CORREGIDA
+    $('.btn-eliminar').click(function(e) {
+        e.preventDefault();
         const productoId = $(this).data('producto');
-        const nombreProducto = $(this).closest('.row').find('h6').text();
         
-        if (confirm(`¿Estás seguro de eliminar "${nombreProducto}" del carrito?`)) {
-            eliminarProducto(productoId);
+        console.log('🗑️ Intentando eliminar producto:', productoId);
+        
+        if (confirm('¿Eliminar este producto del carrito?')) {
+            // Mostrar loading
+            showLoadingSpinner($(this));
+            
+            // Usar la ruta nombrada correcta
+            window.location.href = `{{ route('dulceria.eliminar-carrito', ':id') }}`.replace(':id', productoId);
         }
     });
 
-    // Función para actualizar cantidad
-    function actualizarCantidad(productoId, cantidad) {
-        const precio = parseFloat($(`.cantidad-input[data-producto="${productoId}"]`).data('precio'));
-        
-        $.ajax({
-            url: '{{ route("dulceria.actualizar-carrito") }}',
-            method: 'POST',
-            data: {
-                producto_id: productoId,
-                cantidad: cantidad,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            }
+    function actualizarCarrito(productoId, cantidad) {
+        $.post('{{ route("dulceria.actualizar-carrito") }}', {
+            producto_id: productoId,
+            cantidad: cantidad,
+            _token: '{{ csrf_token() }}'
         })
         .done(function(response) {
-            if (response.success) {
-                // Actualizar subtotal del producto
-                $(`.subtotal[data-producto="${productoId}"]`).text('S/ ' + response.subtotal.toFixed(2));
-                
-                // Actualizar total general
-                actualizarTotalGeneral();
-                
-                showToast('Carrito actualizado', 'success');
-            } else {
-                showToast(response.message || 'Error al actualizar', 'error');
-            }
+            console.log('✅ Carrito actualizado');
+            location.reload();
         })
-        .fail(function() {
-            showToast('Error al actualizar el carrito', 'error');
+        .fail(function(xhr, status, error) {
+            console.error('❌ Error al actualizar carrito:', error);
+            showAlert('Error al actualizar el carrito', 'danger');
         });
     }
-
-    // Función para eliminar producto
-    function eliminarProducto(productoId) {
-        $.ajax({
-            url: `/dulceria/carrito/eliminar/${productoId}`,
-            method: 'DELETE',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content')
-            }
-        })
-        .done(function(response) {
-            // Remover fila del DOM
-            $(`.row[data-producto="${productoId}"]`).fadeOut(300, function() {
-                $(this).remove();
-                actualizarTotalGeneral();
-                verificarCarritoVacio();
-            });
-            
-            showToast('Producto eliminado del carrito', 'success');
-        })
-        .fail(function() {
-            showToast('Error al eliminar el producto', 'error');
-        });
-    }
-
-    // Función para actualizar total general
-    function actualizarTotalGeneral() {
-        let total = 0;
-        $('.subtotal').each(function() {
-            const subtotalText = $(this).text().replace('S/ ', '').replace(',', '');
-            total += parseFloat(subtotalText) || 0;
-        });
-        
-        $('#total-general').text('S/ ' + total.toFixed(2));
-        
-        // Actualizar resumen de items
-        actualizarResumenItems();
-    }
-
-    // Función para actualizar resumen de items
-    function actualizarResumenItems() {
-        const resumenContainer = $('#resumen-items');
-        resumenContainer.empty();
-        
-        $('.row[data-producto]').each(function() {
-            const productoId = $(this).data('producto');
-            const nombre = $(this).find('h6').text();
-            const cantidad = $(this).find('.cantidad-input').val();
-            const subtotal = $(this).find('.subtotal').text();
-            
-            resumenContainer.append(`
-                <div class="d-flex justify-content-between mb-2">
-                    <span>${nombre} x${cantidad}</span>
-                    <span>${subtotal}</span>
-                </div>
-            `);
-        });
-    }
-
-    // Función para verificar si el carrito está vacío
-    function verificarCarritoVacio() {
-        if ($('.row[data-producto]').length === 0) {
-            location.reload(); // Recargar para mostrar mensaje de carrito vacío
+    
+    // Función para limpiar carrito completo
+    window.limpiarCarrito = function() {
+        if (confirm('¿Estás seguro de vaciar todo el carrito?')) {
+            // Aquí puedes agregar la funcionalidad para limpiar todo el carrito
+            // Por ahora, redirigir a dulcería
+            window.location.href = '{{ route("dulceria.index") }}';
         }
+    };
+    
+    // Función para mostrar spinner de carga
+    function showLoadingSpinner(element) {
+        const originalHtml = element.html();
+        element.data('original-html', originalHtml);
+        element.html('<i class="fas fa-spinner fa-spin"></i>');
+        element.prop('disabled', true);
     }
-
-    // Función para mostrar toasts
-    function showToast(message, type = 'info') {
-        let toastContainer = $('.toast-container');
-        if (toastContainer.length === 0) {
-            toastContainer = $('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
-            $('body').append(toastContainer);
-        }
-        
-        const toastId = 'toast-' + Date.now();
-        const bgClass = {
-            'success': 'bg-success',
-            'error': 'bg-danger',
-            'warning': 'bg-warning',
-            'info': 'bg-info'
-        }[type] || 'bg-info';
-
-        const toast = $(`
-            <div id="${toastId}" class="toast ${bgClass} text-white" role="alert">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        `);
-        
-        toastContainer.append(toast);
-        
-        // Mostrar toast
-        const bsToast = new bootstrap.Toast(toast[0]);
-        bsToast.show();
-        
-        // Remover del DOM después de que se oculte
-        toast.on('hidden.bs.toast', function() {
-            $(this).remove();
-        });
-    }
-
-    // Inicializar total al cargar la página
-    actualizarTotalGeneral();
 });
 </script>
 @endpush
