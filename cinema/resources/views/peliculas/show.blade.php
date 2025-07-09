@@ -1,7 +1,7 @@
 {{-- resources/views/peliculas/show.blade.php - SOLUCIÓN COMPLETA --}}
 @extends('layouts.app')
 
-@section('title', $pelicula->titulo . ' - Butaca del Salchicon')
+@section('title', $pelicula->titulo . ' - Butaca del Salchichon')
 
 @section('content')
     <!-- Hero Section con imagen de fondo -->

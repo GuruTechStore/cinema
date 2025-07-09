@@ -43,6 +43,7 @@ Route::get('/cine/{cine}/programacion', [CineController::class, 'programacion'])
 // ========================================
 // DULCERÍA - RUTAS PÚBLICAS (NO REQUIEREN LOGIN)
 // ========================================
+
 Route::get('/dulceria', [DulceriaController::class, 'index'])->name('dulceria.index');
 Route::post('/dulceria/agregar-carrito', [DulceriaController::class, 'agregarCarrito'])->name('dulceria.agregar-carrito');
 Route::get('/dulceria/carrito', [DulceriaController::class, 'carrito'])->name('dulceria.carrito');
@@ -228,12 +229,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reserva/{funcion}/procesar', [ReservaController::class, 'procesar'])->name('reserva.procesar');
     Route::get('/reserva/{reserva}/boleta', [ReservaController::class, 'boleta'])->name('reservas.boleta');
     Route::get('/mis-reservas', [ReservaController::class, 'misReservas'])->name('reservas.mis-reservas');
+    Route::get('/reserva/{funcion}/cine', [ReservaController::class, 'seleccionarAsientos'])->name('reservas.seleccionar-asientos');
+
 
     // ===== DULCERÍA - CHECKOUT Y PEDIDOS REQUIEREN LOGIN =====
     Route::get('/dulceria/checkout', [DulceriaController::class, 'checkout'])->name('dulceria.checkout');
     Route::post('/dulceria/procesar-pedido', [DulceriaController::class, 'procesarPedido'])->name('dulceria.procesar-pedido');
     Route::get('/dulceria/{pedido}/boleta', [DulceriaController::class, 'boleta'])->name('dulceria.boleta');
     Route::get('/mis-pedidos-dulceria', [DulceriaController::class, 'misPedidos'])->name('dulceria.mis-pedidos');
+    Route::get('/dulceria/carrito-info', [DulceriaController::class, 'carritoInfo'])->name('dulceria.carrito-info');
 });
 
 // ========================================

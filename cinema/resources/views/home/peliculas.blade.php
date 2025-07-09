@@ -1,7 +1,7 @@
 {{-- resources/views/home/peliculas.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Películas - Butaca del Salchicon')
+@section('title', 'Películas - Butaca del Salchichon')
 
 @section('content')
     <!-- Page Header -->

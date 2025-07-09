@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/checkout.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Checkout - Dulcería | Butaca del Salchicon')
+@section('title', 'Checkout - Dulcería | Butaca del Salchichon')
 
 @section('content')
 <div class="container py-5">

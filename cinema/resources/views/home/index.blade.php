@@ -1,7 +1,7 @@
 {{-- resources/views/home/index.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Butaca del Salchicon - La mejor experiencia cinematográfica')
+@section('title', 'Butaca del Salchichon - La mejor experiencia cinematográfica')
 
 @section('content')
     <!-- Hero Banner -->

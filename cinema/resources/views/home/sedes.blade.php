@@ -1,7 +1,7 @@
 {{-- resources/views/home/sedes.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Nuestras Sedes - Butaca del Salchicon')
+@section('title', 'Nuestras Sedes - Butaca del Salchichon')
 
 @section('content')
     <!-- Page Header -->
@@ -118,7 +118,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8">
-                    <h4 class="fw-bold mb-3">¿Por qué elegir Butaca del Salchicon?</h4>
+                    <h4 class="fw-bold mb-3">¿Por qué elegir Butaca del Salchichon?</h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="d-flex">

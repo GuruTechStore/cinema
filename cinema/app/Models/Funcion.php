@@ -88,15 +88,15 @@ class Funcion extends Model
         return $query->where('fecha_funcion', '<', Carbon::today());
     }
 
-    // Método para obtener asientos ocupados
-    public function getAsientosOcupados()
-    {
-        return $this->reservas()
-            ->where('estado', 'confirmada')
-            ->get()
-            ->flatMap(function($reserva) {
-                return json_decode($reserva->asientos, true) ?? [];
-            })
-            ->toArray();
-    }
-}
+// Método corregido para obtener asientos ocupados
+public function getAsientosOcupados()
+{
+    return $this->reservas()
+        ->where('estado', 'confirmada')
+        ->get()
+        ->flatMap(function($reserva) {
+            // Ya no necesitas json_decode porque el cast lo hace automáticamente
+            return $reserva->asientos ?? [];
+        })
+        ->toArray();
+}}

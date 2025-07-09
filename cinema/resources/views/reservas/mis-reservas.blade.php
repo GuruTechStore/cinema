@@ -1,7 +1,7 @@
 {{-- resources/views/reservas/mis-reservas.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Mis Reservas - Butaca del Salchicon')
+@section('title', 'Mis Reservas - Butaca del Salchichon')
 
 @section('content')
 <div class="container py-5">

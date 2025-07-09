@@ -473,4 +473,34 @@ class DulceriaController extends Controller
                 ->with('error', 'Error al limpiar el carrito');
         }
     }
+public function carritoInfo()
+{
+    try {
+        $carrito = Session::get('carrito_dulceria', []);
+        
+        $cantidadTotal = 0;
+        $montoTotal = 0;
+        
+        if (!empty($carrito)) {
+            $cantidadTotal = array_sum(array_column($carrito, 'cantidad'));
+            $montoTotal = array_sum(array_map(function($item) {
+                return $item['precio'] * $item['cantidad'];
+            }, $carrito));
+        }
+        
+        return response()->json([
+            'carrito_count' => $cantidadTotal,
+            'monto_total' => $montoTotal,
+            'items_count' => count($carrito)
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error al obtener info del carrito', ['error' => $e->getMessage()]);
+        return response()->json([
+            'carrito_count' => 0,
+            'monto_total' => 0,
+            'items_count' => 0
+        ]);
+    }
+}
 }

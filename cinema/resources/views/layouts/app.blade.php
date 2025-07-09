@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Butaca del Salchicon')</title>
+    <title>@yield('title', 'Butaca del Salchichon')</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -210,9 +210,9 @@
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-                <img src="{{ asset('images/logos/logo.png') }}" alt="Butaca del Salchicon" class="me-2">
+                <img src="{{ asset('images/logos/logo.png') }}" alt="Butaca del Salchichon" class="me-2">
                 <i class="fas fa-film text-warning fs-2 me-2"></i>
-                <span class="fw-bold fs-4">Butaca del Salchicon</span>
+                <span class="fw-bold fs-4">Butaca del Salchichon</span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -336,7 +336,7 @@
                 <div class="col-lg-4 mb-4">
                     <div class="d-flex align-items-center mb-3">
                         <i class="fas fa-film text-warning fs-2 me-3"></i>
-                        <h5 class="text-white mb-0">Butaca del Salchicon</h5>
+                        <h5 class="text-white mb-0">Butaca del Salchichon</h5>
                     </div>
                     <p class="text-light">La mejor experiencia cinematográfica en Perú. Disfruta de los últimos estrenos en nuestras cómodas salas.</p>
                     <div class="d-flex gap-3">
@@ -381,7 +381,7 @@
             </div>
             <hr class="my-4 text-light">
             <div class="text-center text-light">
-                <p>&copy; {{ date('Y') }} Butaca del Salchicon. Todos los derechos reservados.</p>
+                <p>&copy; {{ date('Y') }} Butaca del Salchichon. Todos los derechos reservados.</p>
                 <p class="small">Desarrollado para la mejor experiencia cinematográfica</p>
             </div>
         </div>

@@ -1,7 +1,7 @@
 {{-- resources/views/dulceria/index.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Dulcería - Butaca del Salchicon')
+@section('title', 'Dulcería - Butaca del Salchichon')
 
 @section('content')
     <!-- Header -->
@@ -107,6 +107,7 @@
 
 @push('scripts')
 <script>
+// JavaScript corregido para el carrito flotante
 $(document).ready(function() {
     // Incrementar cantidad
     $('.btn-plus').click(function() {
@@ -136,41 +137,84 @@ $(document).ready(function() {
 
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Agregando...');
 
-        $.post('{{ route("dulceria.agregar-carrito") }}', {
-            producto_id: productoId,
-            cantidad: cantidad
+        $.ajax({
+            url: '{{ route("dulceria.agregar-carrito") }}',
+            method: 'POST',
+            data: {
+                producto_id: productoId,
+                cantidad: cantidad,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
         })
         .done(function(response) {
-            showAlert(response.message, 'success');
-            updateCartCount(response.carrito_count);
-            actualizarCarritoFlotante();
-            
-            // Reset input
-            $(`.cantidad-input[data-producto="${productoId}"]`).val(1);
+            if (response.success) {
+                showAlert(response.message, 'success');
+                updateCartInfo(response.carrito_count, response.monto_total);
+                
+                // Reset input
+                $(`.cantidad-input[data-producto="${productoId}"]`).val(1);
+            } else {
+                showAlert(response.message || 'Error al agregar al carrito', 'danger');
+            }
         })
-        .fail(function() {
-            showAlert('Error al agregar al carrito', 'danger');
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error al agregar al carrito';
+            showAlert(errorMsg, 'danger');
         })
         .always(function() {
             btn.prop('disabled', false).html('<i class="fas fa-cart-plus me-1"></i>Agregar');
         });
     });
 
-    function actualizarCarritoFlotante() {
-        // Aquí podrías hacer una llamada AJAX para obtener el estado actual del carrito
-        // Por simplicidad, usaremos los datos ya disponibles
-        const carritoCount = parseInt($('#carrito-count').text()) || 0;
+    // Función para actualizar información del carrito
+    function updateCartInfo(carritoCount, montoTotal) {
+        // Actualizar contador en el header/navbar si existe
+        $('#carrito-count').text(carritoCount);
         
+        // Actualizar carrito flotante
         if (carritoCount > 0) {
             $('#carrito-flotante').show();
             $('#items-carrito').text(carritoCount);
+            $('#total-carrito').text('S/ ' + parseFloat(montoTotal).toFixed(2));
         } else {
             $('#carrito-flotante').hide();
         }
     }
 
-    // Inicializar carrito flotante
+    // Función para obtener estado actual del carrito via AJAX
+    function actualizarCarritoFlotante() {
+        $.get('{{ route("dulceria.carrito-info") }}')
+        .done(function(response) {
+            updateCartInfo(response.carrito_count, response.monto_total);
+        })
+        .fail(function() {
+            console.log('Error al obtener información del carrito');
+        });
+    }
+
+    // Función para mostrar alertas
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 
+                          type === 'danger' ? 'alert-danger' : 
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
+        
+        const alert = $(`
+            <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        $('body').append(alert);
+        
+        // Auto-remove después de 5 segundos
+        setTimeout(function() {
+            alert.alert('close');
+        }, 5000);
+    }
+
+    // Inicializar carrito flotante al cargar la página
     actualizarCarritoFlotante();
-});
-</script>
+});</script>
 @endpush

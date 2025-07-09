@@ -1,7 +1,7 @@
 {{-- resources/views/reservas/confirmar.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Confirmar Reserva - Butaca del Salchicon')
+@section('title', 'Confirmar Reserva - Butaca del Salchichon')
 
 @section('content')
     <div class="container py-5">
